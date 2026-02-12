@@ -1,0 +1,314 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DP Kid - Pediatric Dialysis Care Platform Design System */
+
+@layer base {
+  :root {
+    /* Primary - Dark Blue */
+    --primary: 213 56% 24%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Background & Surfaces */
+    --background: 210 50% 98%;
+    --foreground: 213 56% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 213 56% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 56% 15%;
+
+    /* Secondary - Soft Medical Blue */
+    --secondary: 200 60% 94%;
+    --secondary-foreground: 213 56% 24%;
+
+    /* Muted */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent - Light Cyan */
+    --accent: 187 70% 88%;
+    --accent-foreground: 213 56% 20%;
+
+    /* Health Indicators */
+    --success: 152 60% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Playful Colors */
+    --playful-pink: 330 70% 75%;
+    --playful-purple: 270 60% 70%;
+    --playful-orange: 25 95% 65%;
+    --playful-green: 140 60% 50%;
+    --playful-yellow: 45 100% 60%;
+
+    /* Borders & Inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 213 56% 24%;
+
+    --radius: 1rem;
+
+    /* Sidebar - Dark Blue Theme */
+    --sidebar-background: 213 56% 20%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 187 70% 70%;
+    --sidebar-primary-foreground: 213 56% 15%;
+    --sidebar-accent: 213 56% 28%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 213 56% 30%;
+    --sidebar-ring: 187 70% 70%;
+
+    /* Chat Colors */
+    --chat-user: 213 56% 24%;
+    --chat-user-foreground: 210 40% 98%;
+    --chat-doctor: 200 60% 94%;
+    --chat-doctor-foreground: 213 56% 15%;
+  }
+
+  .dark {
+    --primary: 187 70% 70%;
+    --primary-foreground: 213 56% 15%;
+
+    --background: 213 56% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 213 56% 15%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 213 56% 15%;
+    --popover-foreground: 210 40% 98%;
+
+    --secondary: 213 56% 20%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 213 56% 20%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 213 56% 25%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 213 56% 25%;
+    --input: 213 56% 25%;
+    --ring: 187 70% 70%;
+
+    --sidebar-background: 213 56% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 187 70% 70%;
+    --sidebar-primary-foreground: 213 56% 10%;
+    --sidebar-accent: 213 56% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 213 56% 20%;
+    --sidebar-ring: 187 70% 70%;
+  }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    direction: rtl;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Floating Animation */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes float-slow {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-15px) rotate(5deg);
+    }
+  }
+
+  @keyframes bubble {
+    0% {
+      transform: translateY(100vh) scale(0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(-20vh) scale(1);
+      opacity: 0;
+    }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes wiggle {
+    0%, 100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+
+  @keyframes bounce-gentle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes celebration {
+    0% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.1) rotate(-5deg);
+    }
+    50% {
+      transform: scale(1.15) rotate(5deg);
+    }
+    75% {
+      transform: scale(1.1) rotate(-5deg);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  .animate-bubble {
+    animation: bubble 8s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out infinite;
+  }
+
+  .animate-bounce-gentle {
+    animation: bounce-gentle 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.5s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s ease-out;
+  }
+
+  .animate-celebration {
+    animation: celebration 0.6s ease-in-out;
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+
+  /* Card Shadows */
+  .card-shadow {
+    box-shadow: 0 4px 20px -2px hsl(213 56% 24% / 0.1);
+  }
+
+  .card-shadow-hover {
+    box-shadow: 0 8px 30px -4px hsl(213 56% 24% / 0.15);
+  }
+
+  /* Playful Gradient Backgrounds */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(213 56% 24%) 0%, hsl(213 56% 35%) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(187 70% 88%) 0%, hsl(200 60% 94%) 100%);
+  }
+
+  .gradient-playful {
+    background: linear-gradient(135deg, hsl(330 70% 75%) 0%, hsl(270 60% 70%) 50%, hsl(200 60% 70%) 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, hsl(152 60% 45%) 0%, hsl(140 60% 50%) 100%);
+  }
+}
