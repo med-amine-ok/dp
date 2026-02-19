@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StatusBadge from '@/components/StatusBadge';
-import DialysisTypeBadge from '@/components/DialysisTypeBadge';
 import { cn } from '@/lib/utils';
 import { Search, Filter, Users, Eye, MessageCircle, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -27,11 +27,13 @@ interface Patient {
 const PatientsPage: React.FC = () => {
   const { language, t, isRTL } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -150,8 +152,6 @@ const PatientsPage: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>{language === 'ar' ? 'المريض' : 'Patient'}</TableHead>
-                  <TableHead>{language === 'ar' ? 'العمر' : 'Âge'}</TableHead>
-                  <TableHead>{t('doctor.dialysisType')}</TableHead>
                   <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
                   <TableHead>{t('doctor.lastSession')}</TableHead>
                   <TableHead className="text-center">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
@@ -172,18 +172,8 @@ const PatientsPage: React.FC = () => {
                             <p className="font-medium text-foreground">
                               {language === 'ar' ? patient.name_ar : patient.name_fr}
                             </p>
-                            {/* Assigne doctor name logic if needed, but for doctor value it IS them */}
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{patient.age}</span>
-                        <span className="text-muted-foreground text-sm ml-1">
-                          {language === 'ar' ? 'سنة' : 'ans'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <DialysisTypeBadge type={patient.dialysis_type} />
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={patient.status} />
@@ -193,13 +183,34 @@ const PatientsPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.viewDetails')}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            title={t('doctor.viewDetails')}
+                            onClick={() => {
+                              setSelectedPatientId(patient.id);
+                              // Could show a modal or navigate to details page
+                            }}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.openChat')}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            title={t('doctor.openChat')}
+                            onClick={() => navigate('/doctor/chat')}
+                          >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.schedule')}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            title={t('doctor.schedule')}
+                            onClick={() => navigate('/doctor/tracking')}
+                          >
                             <Calendar className="h-4 w-4" />
                           </Button>
                         </div>
@@ -208,8 +219,8 @@ const PatientsPage: React.FC = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {loading ? (language === 'ar' ? 'جار التحميل...' : 'Chargement...') : (language === 'ar' ? 'لا يوجد مرضى' : 'Aucun patient trouvé')}
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      {loading ? (language === 'ar' ? 'جاري التحميل...' : 'Chargement...') : (language === 'ar' ? 'لا يوجد مرضى' : 'Aucun patient trouvé')}
                     </TableCell>
                   </TableRow>
                 )}

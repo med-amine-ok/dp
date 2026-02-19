@@ -178,9 +178,7 @@ const DoctorDashboard: React.FC = () => {
                         <p className="font-medium text-foreground">
                           {language === 'ar' ? patient.name_ar : patient.name_fr}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {patient.age} {language === 'ar' ? 'سنة' : 'ans'}
-                        </p>
+                        
                       </div>
                     </div>
                     <StatusBadge status={patient.status} />

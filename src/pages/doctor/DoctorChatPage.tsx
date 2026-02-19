@@ -258,9 +258,7 @@ const DoctorChatPage: React.FC = () => {
                         <p className="font-medium text-foreground text-sm truncate">
                           {language === 'ar' ? patient.name_ar : patient.name_fr}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {patient.age} {language === 'ar' ? 'سنة' : 'ans'}
-                        </p>
+                        
                       </div>
                       <StatusBadge status={patient.status} />
                     </button>

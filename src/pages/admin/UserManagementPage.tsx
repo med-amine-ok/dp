@@ -174,7 +174,7 @@ const UserManagementPage: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('admin.name')}</TableHead>
-                      <TableHead>{t('admin.age')}</TableHead>
+                      
                       <TableHead>{t('admin.assignedDoctor')}</TableHead>
                       <TableHead>{t('admin.registrationDate')}</TableHead>
                       <TableHead>{t('admin.status')}</TableHead>
@@ -205,9 +205,7 @@ const UserManagementPage: React.FC = () => {
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              {patient.age} {language === 'ar' ? 'سنة' : 'ans'}
-                            </TableCell>
+                            
                             <TableCell>
                               {doctor ? (language === 'ar' ? doctor.name_ar : doctor.name_fr) : '-'}
                             </TableCell>

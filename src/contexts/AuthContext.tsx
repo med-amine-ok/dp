@@ -187,7 +187,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             user_id: user.id,
             name_ar: user.name,
             name_fr: user.name,
-            age: 12 // Default age for new signups
+            
           }, { onConflict: 'user_id' });
 
         if (pError) console.error("Error creating patient record:", pError);

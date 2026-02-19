@@ -186,9 +186,7 @@ const DoctorHealthFormsPage: React.FC = () => {
                           <p className="font-medium text-sm truncate">
                             {language === 'ar' ? patient.name_ar : patient.name_fr}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {patient.age} {language === 'ar' ? 'سنة' : 'ans'}
-                          </p>
+                          
                         </div>
                       </button>
                     ))
@@ -214,9 +212,7 @@ const DoctorHealthFormsPage: React.FC = () => {
                         <p className="font-semibold text-foreground">
                           {language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {currentPatient.age} {language === 'ar' ? 'سنة' : 'ans'}
-                        </p>
+                       
                       </div>
                     </div>
                     <StatusBadge status={currentPatient.status} />
