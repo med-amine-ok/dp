@@ -108,13 +108,14 @@ const PatientChatPage: React.FC = () => {
 
   // Fetch Messages & Subscribe
   useEffect(() => {
-    if (!patientId) return;
+    if (!patientId || !assignedDoctorId) return;
 
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('patient_id', patientId)
+        .eq('doctor_id', assignedDoctorId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -133,9 +134,10 @@ const PatientChatPage: React.FC = () => {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages with unique channel name
+    const channelName = `patient-chat:${patientId}:${assignedDoctorId}`;
     const subscription = supabase
-      .channel('chat_messages')
+      .channel(channelName, { config: { broadcast: { self: true } } })
       .on(
         'postgres_changes',
         {
@@ -146,24 +148,39 @@ const PatientChatPage: React.FC = () => {
         },
         (payload) => {
           const newMsg = payload.new;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: newMsg.id,
-              sender: newMsg.sender,
-              message: newMsg.message,
-              timestamp: newMsg.created_at,
-              status: newMsg.status,
-            },
-          ]);
+          // Only add if it matches the current doctor
+          if (newMsg.doctor_id === assignedDoctorId) {
+            setMessages((prev) => {
+              // Avoid duplicates
+              if (prev.find(m => m.id === newMsg.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: newMsg.id,
+                  sender: newMsg.sender,
+                  message: newMsg.message,
+                  timestamp: newMsg.created_at,
+                  status: newMsg.status,
+                },
+              ];
+            });
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status);
+      });
+
+    // Fallback polling every 3 seconds for reliability
+    const pollInterval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
 
     return () => {
       subscription.unsubscribe();
+      clearInterval(pollInterval);
     };
-  }, [patientId]);
+  }, [patientId, assignedDoctorId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -235,10 +252,10 @@ const PatientChatPage: React.FC = () => {
 
   return (
     <DashboardLayout role="patient">
-      <div className="w-full h-[calc(100vh-7rem)] flex flex-col gap-4 max-w-[1600px] mx-auto">
+      <div className="w-full h-[calc(100vh-7rem)] flex flex-col gap-0 max-w-[1600px] mx-auto overflow-hidden">
         {!assignedDoctorId ? (
           // No Doctor Assigned
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-auto">
             <Card className="border-2 border-dashed border-warning/50 bg-warning/5">
               <CardHeader>
                 <CardTitle className="text-warning">
@@ -260,7 +277,7 @@ const PatientChatPage: React.FC = () => {
         ) : (
           <>
             {/* Modern Header */}
-            <Card className="border-none shadow-sm bg-background/80 backdrop-blur-sm">
+            <Card className="border-none shadow-sm bg-background/80 backdrop-blur-sm flex-shrink-0">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="relative">
@@ -292,10 +309,10 @@ const PatientChatPage: React.FC = () => {
             </Card>
 
             {/* Chat Area */}
-            <Card className="flex-1 flex flex-col border-none shadow-md overflow-hidden bg-background/50 backdrop-blur-sm min-h-0">
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-6 h-full">
-                <div className="space-y-6">
+            <Card className="flex-1 flex flex-col border-none shadow-md overflow-hidden bg-background/50 backdrop-blur-sm">
+              {/* Messages - Only scrollable area */}
+              <ScrollArea className="flex-1">
+                <div className="p-6 space-y-6">
                   {messages.map((msg, idx) => {
                     const isUser = msg.sender === 'patient';
                     const showAvatar = !isUser && (idx === 0 || messages[idx - 1].sender === 'patient');
@@ -354,7 +371,7 @@ const PatientChatPage: React.FC = () => {
               </ScrollArea>
 
               {/* Quick Responses & Input - Fixed at bottom */}
-              <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border/50">
+              <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border/50 flex-shrink-0">
                 {/* Input Bar */}
                 <div className="flex items-end gap-3 bg-secondary/30 p-2 rounded-[24px] border border-border/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <Button

@@ -67,6 +67,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           { key: 'nav.home', icon: Home, path: '/doctor' },
           { key: 'nav.patients', icon: Users, path: '/doctor/patients' },
           { key: 'nav.chat', icon: MessageCircle, path: '/doctor/chat' },
+          { key: 'nav.healthForm', icon: FileText, path: '/doctor/health-forms' },
           { key: 'nav.dialysisTracking', icon: Activity, path: '/doctor/tracking' },
         ];
       case 'admin':
@@ -103,7 +104,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
   };
 
   return (
-    <div className={cn('min-h-screen bg-background flex', isRTL && 'flex-row-reverse')}>
+    <div className={cn('h-screen bg-background flex overflow-hidden', isRTL && 'flex-row-reverse')}>
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
@@ -120,7 +121,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 z-40 w-64 bg-sidebar transition-transform duration-300 lg:translate-x-0 flex flex-col',
+          'fixed top-0 inset-y-0 z-40 w-64 bg-sidebar transition-transform duration-300 lg:translate-x-0 flex flex-col h-screen',
           isRTL ? 'right-0' : 'left-0',
           sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
         )}
@@ -191,9 +192,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
       )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen">
+      <main className={cn('flex-1 flex flex-col h-screen overflow-hidden', isRTL ? 'lg:mr-64' : 'lg:ml-64')}>
         {/* Top Bar */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-end px-6 gap-4">
+        <header className="h-16 bg-card border-b border-border flex items-center justify-end px-6 gap-4 flex-shrink-0">
           <LanguageSwitcher />
         </header>
 

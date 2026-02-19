@@ -93,6 +93,7 @@ const DoctorChatPage: React.FC = () => {
         .from('chat_messages')
         .select('*')
         .eq('patient_id', selectedPatient.id)
+        .eq('doctor_id', doctorId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -111,9 +112,10 @@ const DoctorChatPage: React.FC = () => {
 
     fetchMessages();
 
-    // Subscription
+    // Subscription with unique channel name and better error handling
+    const channelName = `doctor-chat:${selectedPatient.id}:${doctorId}`;
     const subscription = supabase
-      .channel(`chat:${selectedPatient.id}`)
+      .channel(channelName, { config: { broadcast: { self: true } } })
       .on(
         'postgres_changes',
         {
@@ -124,22 +126,37 @@ const DoctorChatPage: React.FC = () => {
         },
         (payload) => {
           const newMsg = payload.new;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: newMsg.id,
-              sender: newMsg.sender,
-              message: newMsg.message,
-              timestamp: newMsg.created_at,
-              status: newMsg.status,
-            },
-          ]);
+          // Only add if it's for this patient with this doctor
+          if (newMsg.doctor_id === doctorId) {
+            setMessages((prev) => {
+              // Avoid duplicates
+              if (prev.find(m => m.id === newMsg.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: newMsg.id,
+                  sender: newMsg.sender,
+                  message: newMsg.message,
+                  timestamp: newMsg.created_at,
+                  status: newMsg.status,
+                },
+              ];
+            });
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Doctor chat subscription status for patient:', selectedPatient.id, status);
+      });
+
+    // Fallback polling every 3 seconds for reliability
+    const pollInterval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
 
     return () => {
       subscription.unsubscribe();
+      clearInterval(pollInterval);
     };
   }, [selectedPatient, doctorId]);
 
@@ -200,17 +217,17 @@ const DoctorChatPage: React.FC = () => {
 
   return (
     <DashboardLayout role="doctor">
-      <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)]">
-        <div className="grid md:grid-cols-3 gap-4 h-full">
+      <div className="max-w-6xl mx-auto h-[calc(100vh-7rem)] overflow-hidden">
+        <div className="grid md:grid-cols-3 gap-4 h-full overflow-hidden">
           {/* Patients List */}
-          <Card className="card-shadow">
-            <div className="p-4 border-b border-border">
+          <Card className="card-shadow overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border flex-shrink-0">
               <h2 className="font-semibold text-foreground flex items-center gap-2">
                 <MessageCircle className="h-5 w-5" />
                 {language === 'ar' ? 'المحادثات' : 'Conversations'}
               </h2>
             </div>
-            <ScrollArea className="h-[calc(100%-60px)]">
+            <ScrollArea className="flex-1">
               <div className="p-2 space-y-1">
                 {loading ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
@@ -254,11 +271,11 @@ const DoctorChatPage: React.FC = () => {
           </Card>
 
           {/* Chat Area */}
-          <Card className="md:col-span-2 card-shadow flex flex-col">
+          <Card className="md:col-span-2  card-shadow flex flex-col overflow-hidden">
             {selectedPatient ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
                       <AvatarFallback className="bg-secondary text-secondary-foreground">
@@ -286,7 +303,7 @@ const DoctorChatPage: React.FC = () => {
                 </div>
 
                 {/* Patient Quick Info */}
-                <div className="p-3 bg-muted/50 border-b border-border flex items-center gap-4 text-sm">
+                <div className="p-3 bg-muted/50 border-b border-border flex items-center gap-4 text-sm flex-shrink-0">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
@@ -296,9 +313,9 @@ const DoctorChatPage: React.FC = () => {
                   <StatusBadge status={selectedPatient.status} />
                 </div>
 
-                {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
+                {/* Messages - Only scrollable area */}
+                <ScrollArea className="flex-1 overflow-hidden">
+                  <div className="p-4 space-y-4">
                     {messages.map((msg, idx) => (
                       <div
                         key={`${msg.id}-${idx}`}
@@ -348,25 +365,8 @@ const DoctorChatPage: React.FC = () => {
                   </div>
                 </ScrollArea>
 
-                {/* Templates */}
-                <div className="p-3 border-t border-border">
-                  <div className="flex flex-wrap gap-2">
-                    {messageTemplates.map((template, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full text-xs"
-                        onClick={() => handleTemplate(template)}
-                      >
-                        {language === 'ar' ? template.labelAr : template.labelFr}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Input Area */}
-                <div className="p-4 border-t border-border">
+                <div className="p-4 border-t border-border flex-shrink-0">
                   <div className="flex gap-2">
                     <Textarea
                       placeholder={language === 'ar' ? 'اكتب رسالتك...' : 'Écrivez votre message...'}

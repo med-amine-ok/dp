@@ -130,6 +130,11 @@ const PatientDashboard: React.FC = () => {
               </span>
             </div>
           </div>
+          
+          <div className="flex-1">
+            <AssignDoctorCard />
+          </div>
+        
         </div>
 
         {/* Stats Cards */}
@@ -164,10 +169,7 @@ const PatientDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Doctor Assignment Card */}
-        <div className="max-w-md">
-          <AssignDoctorCard />
-        </div>
+       
 
         {/* Quick Links */}
         <div>

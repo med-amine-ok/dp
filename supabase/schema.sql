@@ -530,8 +530,16 @@ CREATE POLICY "Patients can view own forms" ON public.health_forms FOR SELECT TO
   USING (patient_id IN (SELECT id FROM public.patients WHERE user_id = auth.uid()));
 CREATE POLICY "Patients can submit forms" ON public.health_forms FOR INSERT TO authenticated
   WITH CHECK (patient_id IN (SELECT id FROM public.patients WHERE user_id = auth.uid()));
-CREATE POLICY "Doctors can view patient forms" ON public.health_forms FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'doctor'));
+CREATE POLICY "Doctors can view only their patients' forms" ON public.health_forms FOR SELECT TO authenticated
+  USING (
+    patient_id IN (
+      SELECT id FROM public.patients 
+      WHERE assigned_doctor_id IN (
+        SELECT id FROM public.doctors 
+        WHERE user_id = auth.uid()
+      )
+    )
+  );
 CREATE POLICY "Admins can view all forms" ON public.health_forms FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
