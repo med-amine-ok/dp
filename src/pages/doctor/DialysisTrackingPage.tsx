@@ -1,24 +1,119 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Progress } from '@/components/ui/progress';
 import StatusBadge from '@/components/StatusBadge';
 import { cn } from '@/lib/utils';
 import { Activity, Calendar as CalendarIcon, Clock, Weight, Heart, AlertCircle, ChevronRight } from 'lucide-react';
-import { mockPatients, mockDialysisSessions } from '@/data/mockData';
 import { fr, ar } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
+
+interface Patient {
+  id: string;
+  name_ar: string;
+  name_fr: string;
+  age: number;
+  status: 'active' | 'recovering' | 'critical';
+  weight_target?: number;
+}
+
+interface DialysisSession {
+  id: string;
+  patient_id: string;
+  session_date: string;
+  duration: number;
+  status: 'completed' | 'scheduled' | 'missed';
+  weight_before?: number;
+  weight_after?: number;
+  blood_pressure?: string;
+  complications?: string;
+}
 
 const DialysisTrackingPage: React.FC = () => {
   const { language, t, isRTL } = useLanguage();
-  const [selectedPatient, setSelectedPatient] = useState(mockPatients[0].id);
+  const { user } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [sessions, setSessions] = useState<DialysisSession[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const patientSessions = mockDialysisSessions.filter(s => s.patientId === selectedPatient);
-  const currentPatient = mockPatients.find(p => p.id === selectedPatient);
+  // 1. Fetch Patients assigned to Doctor
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (!user) return;
+      try {
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (doctorError) throw doctorError;
+
+        const { data: patientsData, error: patientsError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('assigned_doctor_id', doctorData.id);
+
+        if (patientsError) throw patientsError;
+
+        if (patientsData && patientsData.length > 0) {
+          setPatients(patientsData);
+          setSelectedPatientId(patientsData[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching patients for tracking:', error);
+      }
+    };
+
+    fetchPatients();
+  }, [user]);
+
+  // 2. Fetch Sessions for Selected Patient
+  useEffect(() => {
+    if (!selectedPatientId) return;
+
+    const fetchSessions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('dialysis_sessions')
+          .select('*')
+          .eq('patient_id', selectedPatientId)
+          .order('session_date', { ascending: false });
+
+        if (error) throw error;
+        setSessions(data || []);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      }
+    };
+
+    fetchSessions();
+  }, [selectedPatientId]);
+
+  const currentPatient = patients.find(p => p.id === selectedPatientId);
+
+  // Stats Calculations
+  const completedSessions = sessions.filter(s => s.status === 'completed');
+  const thisMonthSessions = completedSessions.filter(s => {
+    const d = new Date(s.session_date);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const attendanceRate = sessions.length > 0
+    ? Math.round((completedSessions.length / sessions.length) * 100)
+    : 0;
+
+  // Weight goal simplified logic
+  const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
+  const weightProgress = (lastSession?.weight_after && currentPatient?.weight_target)
+    ? Math.min(100, Math.round((lastSession.weight_after / currentPatient.weight_target) * 100))
+    : 0;
 
   return (
     <DashboardLayout role="doctor">
@@ -40,14 +135,14 @@ const DialysisTrackingPage: React.FC = () => {
           </div>
 
           {/* Patient Selector */}
-          <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+          <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder={language === 'ar' ? 'اختر مريضاً' : 'Sélectionner un patient'} />
             </SelectTrigger>
             <SelectContent>
-              {mockPatients.map((patient) => (
+              {patients.map((patient) => (
                 <SelectItem key={patient.id} value={patient.id}>
-                  {language === 'ar' ? patient.name : patient.nameFr}
+                  {language === 'ar' ? patient.name_ar : patient.name_fr}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -79,12 +174,12 @@ const DialysisTrackingPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                {t('tracking.history')} - {currentPatient && (language === 'ar' ? currentPatient.name : currentPatient.nameFr)}
+                {t('tracking.history')} - {currentPatient && (language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr)}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {patientSessions.map((session) => (
+                {sessions.map((session) => (
                   <div
                     key={session.id}
                     className="p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
@@ -105,7 +200,7 @@ const DialysisTrackingPage: React.FC = () => {
                           )} />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{session.date}</p>
+                          <p className="font-medium text-foreground">{session.session_date}</p>
                           <p className="text-sm text-muted-foreground">
                             {session.duration} {language === 'ar' ? 'دقيقة' : 'min'}
                           </p>
@@ -124,7 +219,7 @@ const DialysisTrackingPage: React.FC = () => {
                           <div>
                             <p className="text-xs text-muted-foreground">{t('tracking.weight')}</p>
                             <p className="text-sm font-medium">
-                              {session.weightBefore} → {session.weightAfter} kg
+                              {session.weight_before || '-'} → {session.weight_after || '-'} kg
                             </p>
                           </div>
                         </div>
@@ -132,7 +227,7 @@ const DialysisTrackingPage: React.FC = () => {
                           <Heart className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">{t('tracking.vitals')}</p>
-                            <p className="text-sm font-medium">{session.bloodPressure}</p>
+                            <p className="text-sm font-medium">{session.blood_pressure || '-'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 md:col-span-2">
@@ -161,7 +256,7 @@ const DialysisTrackingPage: React.FC = () => {
                   </div>
                 ))}
 
-                {patientSessions.length === 0 && (
+                {sessions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     {language === 'ar' ? 'لا توجد جلسات مسجلة' : 'Aucune séance enregistrée'}
                   </div>
@@ -185,27 +280,27 @@ const DialysisTrackingPage: React.FC = () => {
                   <span className="text-muted-foreground">
                     {language === 'ar' ? 'جلسات هذا الشهر' : 'Séances ce mois'}
                   </span>
-                  <span className="font-medium">8/12</span>
+                  <span className="font-medium">{thisMonthSessions.length}/12</span>
                 </div>
-                <Progress value={67} className="h-3" />
+                <Progress value={(thisMonthSessions.length / 12) * 100} className="h-3" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
                     {language === 'ar' ? 'نسبة الحضور' : 'Taux de présence'}
                   </span>
-                  <span className="font-medium text-success">95%</span>
+                  <span className="font-medium text-success">{attendanceRate}%</span>
                 </div>
-                <Progress value={95} className="h-3" />
+                <Progress value={attendanceRate} className="h-3" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
                     {language === 'ar' ? 'هدف الوزن' : 'Objectif poids'}
                   </span>
-                  <span className="font-medium">85%</span>
+                  <span className="font-medium">{weightProgress}%</span>
                 </div>
-                <Progress value={85} className="h-3" />
+                <Progress value={weightProgress} className="h-3" />
               </div>
             </div>
           </CardContent>

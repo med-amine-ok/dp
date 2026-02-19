@@ -1,14 +1,75 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
-import KidneyMascot from '@/components/KidneyMascot';
 import DashboardCard from '@/components/DashboardCard';
+import AssignDoctorCard from '@/components/AssignDoctorCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star } from 'lucide-react';
+import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
 const PatientDashboard: React.FC = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+
+  const [stats, setStats] = useState({
+    sessions: 0,
+    videos: 0,
+    games: 0,
+    stars: 0,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchStats = async () => {
+      try {
+        // 1. Get Patient ID
+        const { data: patientData } = await supabase
+          .from('patients')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        let sessionCount = 0;
+        if (patientData) {
+          const { count } = await supabase
+            .from('dialysis_sessions')
+            .select('*', { count: 'exact', head: true })
+            .eq('patient_id', patientData.id);
+          sessionCount = count || 0;
+        }
+
+        // 2. Video Progress
+        const { count: videoCount } = await supabase
+          .from('video_progress')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // 3. Game Scores & Stars
+        const { data: gameData } = await supabase
+          .from('game_scores')
+          .select('stars')
+          .eq('user_id', user.id);
+
+        const gameCount = gameData?.length || 0;
+        const totalStars = gameData?.reduce((acc, curr) => acc + (curr.stars || 0), 0) || 0;
+
+        setStats({
+          sessions: sessionCount,
+          videos: videoCount || 0,
+          games: gameCount,
+          stars: totalStars,
+        });
+
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
 
   const quickLinks = [
     {
@@ -24,6 +85,13 @@ const PatientDashboard: React.FC = () => {
       icon: FileText,
       path: '/patient/health-form',
       color: 'bg-playful-green/20 text-playful-green',
+    },
+    {
+      title: language === 'ar' ? 'الجلسات' : 'Séances',
+      description: language === 'ar' ? 'إدارة الجلسات' : 'Gérer les séances',
+      icon: Activity,
+      path: '/patient/sessions',
+      color: 'bg-playful-pink/20 text-playful-pink',
     },
     {
       title: language === 'ar' ? 'الدردشة' : 'Chat',
@@ -48,7 +116,7 @@ const PatientDashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-br from-secondary to-accent rounded-2xl p-8 card-shadow">
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {t('patient.welcome')}, Ahmed! 👋
+              {t('patient.welcome')}, {user?.name?.split(' ')[0] || 'Friend'}! 👋
             </h1>
             <p className="text-lg text-muted-foreground">
               {t('patient.howAreYou')}
@@ -56,7 +124,9 @@ const PatientDashboard: React.FC = () => {
             <div className="flex items-center gap-2 mt-4 justify-center md:justify-start">
               <span className="text-2xl">🌟</span>
               <span className="text-sm font-medium text-foreground">
-                {language === 'ar' ? '5 نجوم هذا الأسبوع!' : '5 étoiles cette semaine !'}
+                {language === 'ar'
+                  ? `${stats.stars} نجوم هذا الأسبوع!`
+                  : `${stats.stars} étoiles cette semaine !`}
               </span>
             </div>
           </div>
@@ -66,32 +136,37 @@ const PatientDashboard: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <DashboardCard
             title={language === 'ar' ? 'الجلسات' : 'Séances'}
-            value="12"
+            value={stats.sessions.toString()}
             subtitle={language === 'ar' ? 'هذا الشهر' : 'Ce mois'}
             icon={Heart}
             color="success"
           />
           <DashboardCard
             title={language === 'ar' ? 'الفيديوهات' : 'Vidéos'}
-            value="3"
+            value={stats.videos.toString()}
             subtitle={language === 'ar' ? 'شاهدتها' : 'Regardées'}
             icon={BookOpen}
             color="accent"
           />
           <DashboardCard
             title={language === 'ar' ? 'الألعاب' : 'Jeux'}
-            value="8"
+            value={stats.games.toString()}
             subtitle={language === 'ar' ? 'لعبتها' : 'Joués'}
             icon={Gamepad2}
             color="warning"
           />
           <DashboardCard
             title={language === 'ar' ? 'النجوم' : 'Étoiles'}
-            value="42"
+            value={stats.stars.toString()}
             subtitle={language === 'ar' ? 'المجموع' : 'Total'}
             icon={Star}
             color="primary"
           />
+        </div>
+
+        {/* Doctor Assignment Card */}
+        <div className="max-w-md">
+          <AssignDoctorCard />
         </div>
 
         {/* Quick Links */}
@@ -99,7 +174,7 @@ const PatientDashboard: React.FC = () => {
           <h2 className="text-xl font-bold text-foreground mb-4">
             {language === 'ar' ? 'روابط سريعة' : 'Accès rapide'}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {quickLinks.map((link) => (
               <Link key={link.path} to={link.path}>
                 <Card className="h-full hover:scale-105 transition-transform duration-200 card-shadow hover:card-shadow-hover cursor-pointer">
@@ -126,7 +201,7 @@ const PatientDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-foreground">
-              {language === 'ar' 
+              {language === 'ar'
                 ? 'اشرب الماء بانتظام! الماء يساعد كليتيك على العمل بشكل أفضل. 💧'
                 : 'Bois de l\'eau régulièrement ! L\'eau aide tes reins à bien fonctionner. 💧'}
             </p>

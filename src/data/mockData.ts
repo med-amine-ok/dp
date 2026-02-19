@@ -364,6 +364,18 @@ export const mockGames: Game[] = [
     icon: '🌬️',
     color: 'playful-purple',
   },
+  {
+    id: '8',
+    titleFr: 'Équilibre d\'Eau',
+    titleAr: 'توازن الماء',
+    descriptionFr: 'Apprends à gérer ton hydratation',
+    descriptionAr: 'تعلم كيف تدير شربك للماء',
+    type: 'educational',
+    difficulty: 'medium',
+    duration: 10,
+    icon: '💧',
+    color: 'playful-orange',
+  },
 ];
 
 export const mockAnalytics = {

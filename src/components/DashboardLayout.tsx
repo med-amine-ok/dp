@@ -34,9 +34,23 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
   const { t, isRTL } = useLanguage();
-  const { logout, user } = useAuth();
+  const { logout, user, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/');
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const getNavItems = (): NavItem[] => {
     switch (role) {
@@ -143,9 +157,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
         {/* Bottom Section */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
           <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-primary font-bold">
-              {user?.name?.charAt(0) || 'U'}
-            </div>
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name || 'User'}
+                className="w-8 h-8 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-primary font-bold">
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+            )}
             <span className="text-sm text-sidebar-foreground">{user?.name || 'User'}</span>
           </div>
           <Button

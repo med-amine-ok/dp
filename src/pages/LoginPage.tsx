@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,22 +13,42 @@ import { User, Stethoscope, Shield, Activity, MessageCircle, GraduationCap } fro
 
 const LoginPage: React.FC = () => {
   const { t, isRTL } = useLanguage();
-  const { login, isAuthenticated, selectRole } = useAuth();
+  const { login, isAuthenticated, selectRole, user, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      if (user.role === 'patient') navigate('/patient');
+      else if (user.role === 'doctor') navigate('/doctor');
+      else if (user.role === 'admin') navigate('/admin');
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const handleGoogleLogin = () => {
     login();
   };
 
-  const handleRoleSelect = (role: 'patient' | 'doctor' | 'admin') => {
-    selectRole(role);
-    if (role === 'patient') {
-
-      navigate('/patient');
-    } else if (role === 'doctor') {
-      navigate('/doctor');
-    } else {
-      navigate('/admin');
+  const handleRoleSelect = async (role: 'patient' | 'doctor' | 'admin') => {
+    try {
+      await selectRole(role);
+      if (role === 'patient') {
+        navigate('/patient');
+      } else if (role === 'doctor') {
+        navigate('/doctor');
+      } else {
+        navigate('/admin');
+      }
+    } catch (error) {
+      console.error('Role selection failed:', error);
+      toast.error("Failed to select role. Please try again.");
     }
   };
 
@@ -46,7 +67,7 @@ const LoginPage: React.FC = () => {
         <main className="flex-1 flex items-center justify-center p-6 relative z-10">
           <div className="w-full max-w-4xl animate-slide-up">
             <div className="text-center mb-8">
-              
+
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 {t('auth.selectRole')}
               </h1>

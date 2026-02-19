@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,19 +11,68 @@ import StatusBadge from '@/components/StatusBadge';
 import DialysisTypeBadge from '@/components/DialysisTypeBadge';
 import { cn } from '@/lib/utils';
 import { Search, Filter, Users, Eye, MessageCircle, Calendar } from 'lucide-react';
-import { mockPatients } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+
+interface Patient {
+  id: string;
+  name_ar: string;
+  name_fr: string;
+  age: number;
+  dialysis_type: 'HD' | 'PD';
+  status: 'active' | 'recovering' | 'critical';
+  last_session?: string;
+  assigned_doctor_id?: string;
+}
 
 const PatientsPage: React.FC = () => {
   const { language, t, isRTL } = useLanguage();
+  const { user } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const filteredPatients = mockPatients.filter(patient => {
-    const nameMatch = patient.nameFr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      patient.name.includes(searchQuery);
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (!user) return;
+      try {
+        // 1. Get Doctor ID
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (doctorError) {
+          console.error('Error fetching doctor profile:', doctorError);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fetch Patients
+        const { data: patientsData, error: patientsError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('assigned_doctor_id', doctorData.id);
+
+        if (patientsError) throw patientsError;
+        setPatients(patientsData || []);
+      } catch (error) {
+        console.error('Error fetching patients:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, [user]);
+
+  const filteredPatients = patients.filter(patient => {
+    const nameMatch = (patient.name_fr || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (patient.name_ar || '').includes(searchQuery);
     const statusMatch = statusFilter === 'all' || patient.status === statusFilter;
-    const typeMatch = typeFilter === 'all' || patient.dialysisType === typeFilter;
+    const typeMatch = typeFilter === 'all' || patient.dialysis_type === typeFilter;
     return nameMatch && statusMatch && typeMatch;
   });
 
@@ -39,7 +89,7 @@ const PatientsPage: React.FC = () => {
               {t('doctor.patients')}
             </h1>
             <p className="text-muted-foreground">
-              {language === 'ar' 
+              {language === 'ar'
                 ? `${filteredPatients.length} مريض`
                 : `${filteredPatients.length} patients`}
             </p>
@@ -108,53 +158,61 @@ const PatientsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPatients.map((patient) => (
-                  <TableRow key={patient.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                          <span className="font-semibold text-secondary-foreground">
-                            {(language === 'ar' ? patient.name : patient.nameFr).charAt(0)}
-                          </span>
+                {filteredPatients.length > 0 ? (
+                  filteredPatients.map((patient) => (
+                    <TableRow key={patient.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                            <span className="font-semibold text-secondary-foreground">
+                              {(language === 'ar' ? patient.name_ar : patient.name_fr).charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {language === 'ar' ? patient.name_ar : patient.name_fr}
+                            </p>
+                            {/* Assigne doctor name logic if needed, but for doctor value it IS them */}
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {language === 'ar' ? patient.name : patient.nameFr}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{patient.assignedDoctor}</p>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">{patient.age}</span>
+                        <span className="text-muted-foreground text-sm ml-1">
+                          {language === 'ar' ? 'سنة' : 'ans'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <DialysisTypeBadge type={patient.dialysis_type} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={patient.status} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">{patient.last_session || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.viewDetails')}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.openChat')}>
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.schedule')}>
+                            <Calendar className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{patient.age}</span>
-                      <span className="text-muted-foreground text-sm ml-1">
-                        {language === 'ar' ? 'سنة' : 'ans'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <DialysisTypeBadge type={patient.dialysisType} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={patient.status} />
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">{patient.lastSession}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.viewDetails')}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.openChat')}>
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title={t('doctor.schedule')}>
-                          <Calendar className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {loading ? (language === 'ar' ? 'جار التحميل...' : 'Chargement...') : (language === 'ar' ? 'لا يوجد مرضى' : 'Aucun patient trouvé')}
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </CardContent>

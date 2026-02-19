@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,16 +15,36 @@ import { format } from 'date-fns';
 import { fr, ar } from 'date-fns/locale';
 import { CalendarIcon, FileText, Send, PartyPopper, Mic } from 'lucide-react';
 import KidneyMascot from '@/components/KidneyMascot';
+import { supabase } from '@/lib/supabase';
 
 const HealthFormPage: React.FC = () => {
   const { language, t } = useLanguage();
-  const [date, setDate] = useState<Date>();
+  const { user } = useAuth();
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [mood, setMood] = useState<number | null>(null);
   const [painLevel, setPainLevel] = useState<number | null>(null);
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [duration, setDuration] = useState('');
+  const [infusedQuantity, setInfusedQuantity] = useState('');
+  const [drainedQuantity, setDrainedQuantity] = useState('');
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch Patient ID
+  useEffect(() => {
+    if (!user) return;
+    const fetchPatientId = async () => {
+      const { data } = await supabase
+        .from('patients')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      if (data) setPatientId(data.id);
+    };
+    fetchPatientId();
+  }, [user]);
 
   const moodEmojis = [
     { value: 5, emoji: '😄', label: t('health.moodGreat') },
@@ -58,10 +79,47 @@ const HealthFormPage: React.FC = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    if (!patientId || !date) return;
+
+    setIsSubmitting(true);
+    try {
+      // Parse duration to int (assuming minutes or hours). DB expects INT.
+      // If user types '3h', parseInt might handle it if it starts with number.
+      // If just text, we might need a workaround. For now, try parseInt.
+      const durationInt = parseInt(duration) || 0;
+
+      const { error } = await supabase.from('health_forms').insert({
+        patient_id: patientId,
+        mood: mood || 3, // Default normal
+        pain_level: painLevel || 0,
+        symptoms: symptoms,
+        session_date: format(date, 'yyyy-MM-dd'),
+        session_duration: durationInt,
+        infused_quantity: infusedQuantity,
+        drained_quantity: drainedQuantity,
+        notes: notes,
+      });
+
+      if (error) throw error;
+
+      setSubmitted(true);
+      // Reset form
+      setMood(null);
+      setPainLevel(null);
+      setSymptoms([]);
+      setDuration('');
+      setNotes('');
+      setInfusedQuantity('');
+      setDrainedQuantity('');
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (error) {
+      console.error('Error submitting health form:', error);
+      // Optional: Show error toast
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -76,11 +134,11 @@ const HealthFormPage: React.FC = () => {
             {t('health.submitted')} 🎉
           </h1>
           <p className="text-muted-foreground mt-2">
-            {language === 'ar' 
+            {language === 'ar'
               ? 'شكراً لك! طبيبك سيراجع المعلومات.'
               : 'Merci ! Ton médecin va regarder les informations.'}
           </p>
-          <Button 
+          <Button
             className="mt-6"
             onClick={() => setSubmitted(false)}
           >
@@ -140,7 +198,7 @@ const HealthFormPage: React.FC = () => {
           {/* Session Date & Duration */}
           <Card className="card-shadow">
             <CardHeader>
-              <CardTitle className="text-lg">{t('health.sessionDate')} 📅</CardTitle>
+              <CardTitle className="text-lg">{t('health.sessionDetails')} 📅</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -171,14 +229,37 @@ const HealthFormPage: React.FC = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>{t('health.duration')}</Label>
                   <Input
                     type="text"
-                    placeholder={language === 'ar' ? '3 ساعات' : '3 heures'}
+                    placeholder={language === 'ar' ? '30' : '30'}
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'ar' ? 'دقائق' : 'minutes'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t('health.infusedQuantity')}</Label>
+                  <Input
+                    type="text"
+                    placeholder={language === 'ar' ? '1500 مل' : '1500 ml'}
+                    value={infusedQuantity}
+                    onChange={(e) => setInfusedQuantity(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t('health.drainedQuantity')}</Label>
+                  <Input
+                    type="text"
+                    placeholder={language === 'ar' ? '1600 مل' : '1600 ml'}
+                    value={drainedQuantity}
+                    onChange={(e) => setDrainedQuantity(e.target.value)}
                   />
                 </div>
               </div>
@@ -230,13 +311,30 @@ const HealthFormPage: React.FC = () => {
                     )}
                     onClick={() => toggleSymptom(symptom.id)}
                   >
-                    <Checkbox
-                      checked={symptoms.includes(symptom.id)}
-                      onCheckedChange={() => toggleSymptom(symptom.id)}
-                    />
-                    <Label className="cursor-pointer">
+                    {/* Custom Checkbox Visual */}
+                    <div className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                      symptoms.includes(symptom.id)
+                        ? "bg-playful-pink border-playful-pink"
+                        : "bg-background border-input"
+                    )}>
+                      {symptoms.includes(symptom.id) && (
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="cursor-pointer flex-1">
                       {language === 'ar' ? symptom.labelAr : symptom.labelFr}
-                    </Label>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -264,8 +362,16 @@ const HealthFormPage: React.FC = () => {
           </Card>
 
           {/* Submit Button */}
-          <Button type="submit" className="w-full h-14 text-lg font-semibold rounded-xl gap-2">
-            <Send className="h-5 w-5" />
+          <Button
+            type="submit"
+            className="w-full h-14 text-lg font-semibold rounded-xl gap-2"
+            disabled={isSubmitting || !patientId}
+          >
+            {isSubmitting ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
             {t('health.submit')}
           </Button>
         </form>
