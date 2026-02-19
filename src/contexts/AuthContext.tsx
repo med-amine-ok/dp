@@ -112,13 +112,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const login = async () => {
+    // Build the redirect URL - must match authorized redirect URIs in Google Cloud Console
+    const redirectUrl = `${window.location.origin}/`;
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: false,
       },
     });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Google login error:', error);
+      throw new Error(`Login failed: ${error.message || 'Unknown error'}`);
+    }
   };
 
   const logout = async () => {
