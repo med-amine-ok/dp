@@ -19,6 +19,7 @@ import {
   LogOut,
   Menu,
   X,
+  User,
 } from 'lucide-react';
 
 interface NavItem {
@@ -61,6 +62,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           { key: 'nav.healthForm', icon: FileText, path: '/patient/health-form' },
           { key: 'nav.chat', icon: MessageCircle, path: '/patient/chat' },
           { key: 'nav.games', icon: Gamepad2, path: '/patient/games' },
+          { key: 'nav.profile', icon: User, path: '/patient/profile' },
         ];
       case 'doctor':
         return [
@@ -156,12 +158,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
 
         {/* Bottom Section */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
-          <div className="flex items-center gap-3 px-4 py-2">
+          <button
+            onClick={() => { if (role === 'patient') { navigate('/patient/profile'); setSidebarOpen(false); } }}
+            className={`flex items-center gap-3 px-4 py-2 w-full rounded-xl transition-all duration-200 ${role === 'patient' ? 'hover:bg-sidebar-accent/60 cursor-pointer' : 'cursor-default'
+              }`}
+          >
             {user?.avatar ? (
               <img
                 src={user.avatar}
                 alt={user.name || 'User'}
-                className="w-8 h-8 rounded-full object-cover"
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-sidebar-primary/40"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -169,8 +175,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
                 {user?.name?.charAt(0) || 'U'}
               </div>
             )}
-            <span className="text-sm text-sidebar-foreground">{user?.name || 'User'}</span>
-          </div>
+            <div className="flex flex-col items-start">
+              <span className="text-sm text-sidebar-foreground font-medium leading-tight">{user?.name || 'User'}</span>
+              {role === 'patient' && (
+                <span className="text-[10px] text-sidebar-primary/70">Mon profil →</span>
+              )}
+            </div>
+          </button>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10"

@@ -17,6 +17,7 @@ import HealthFormPage from "./pages/patient/HealthFormPage";
 import PatientChatPage from "./pages/patient/PatientChatPage";
 import PatientSessionsPage from "./pages/patient/PatientSessionsPage";
 import GamesPage from "./pages/patient/GamesPage";
+import PatientProfilePage from "./pages/patient/PatientProfilePage";
 
 // Doctor Pages
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
@@ -44,7 +45,7 @@ const App = () => (
             <Routes>
               {/* Auth */}
               <Route path="/" element={<LoginPage />} />
-              
+
               {/* Patient Routes */}
               <Route path="/patient" element={<PatientDashboard />} />
               <Route path="/patient/education" element={<EducationPage />} />
@@ -52,20 +53,21 @@ const App = () => (
               <Route path="/patient/chat" element={<PatientChatPage />} />
               <Route path="/patient/sessions" element={<PatientSessionsPage />} />
               <Route path="/patient/games" element={<GamesPage />} />
-              
+              <Route path="/patient/profile" element={<PatientProfilePage />} />
+
               {/* Doctor Routes */}
               <Route path="/doctor" element={<DoctorDashboard />} />
               <Route path="/doctor/patients" element={<PatientsPage />} />
               <Route path="/doctor/chat" element={<DoctorChatPage />} />
               <Route path="/doctor/health-forms" element={<DoctorHealthFormsPage />} />
-              
+
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/analytics" element={<AnalyticsPage />} />
               <Route path="/admin/users" element={<UserManagementPage />} />
               <Route path="/admin/statistics" element={<StatisticsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />
-              
+
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>

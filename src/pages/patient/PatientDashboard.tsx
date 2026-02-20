@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import DashboardCard from '@/components/DashboardCard';
 import AssignDoctorCard from '@/components/AssignDoctorCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, Activity } from 'lucide-react';
+import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, Activity, UserCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -19,6 +19,8 @@ const PatientDashboard: React.FC = () => {
     games: 0,
     stars: 0,
   });
+
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -69,6 +71,20 @@ const PatientDashboard: React.FC = () => {
     };
 
     fetchStats();
+
+    // Also check profile completeness
+    const checkProfile = async () => {
+      const { data } = await supabase
+        .from('patients')
+        .select('age, dialysis_type, status')
+        .eq('user_id', user.id)
+        .single();
+      if (data) {
+        const complete = data.age > 0 && !!data.dialysis_type && !!data.status;
+        setProfileComplete(complete);
+      }
+    };
+    checkProfile();
   }, [user]);
 
   const quickLinks = [
@@ -130,12 +146,39 @@ const PatientDashboard: React.FC = () => {
               </span>
             </div>
           </div>
-          
+
           <div className="flex-1">
             <AssignDoctorCard />
           </div>
-        
+
         </div>
+
+        {/* Profile Completion Banner */}
+        {profileComplete === false && (
+          <Link to="/patient/profile">
+            <div className="flex items-center justify-between gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-6 py-4 hover:shadow-md transition-all duration-300 hover:scale-[1.005] cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-amber-100 text-amber-600 shrink-0">
+                  <UserCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="font-bold text-amber-800 text-sm">
+                    {language === 'ar' ? '⚠️ أكمل ملفك الشخصي' : '⚠️ Complétez votre profil'}
+                  </p>
+                  <p className="text-amber-700 text-xs mt-0.5">
+                    {language === 'ar'
+                      ? 'أضف عمرك، نوع الغسيل، وحالتك الصحية'
+                      : "Ajoutez votre âge, type de dialyse et état de santé"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-amber-600 font-semibold text-sm shrink-0">
+                {language === 'ar' ? 'أكمل الآن' : 'Compléter'}
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -169,7 +212,7 @@ const PatientDashboard: React.FC = () => {
           />
         </div>
 
-       
+
 
         {/* Quick Links */}
         <div>

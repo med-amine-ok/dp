@@ -43,6 +43,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.statistics': 'Statistiques',
     'nav.monitoring': 'Surveillance',
     'nav.logout': 'Déconnexion',
+    'nav.profile': 'Mon profil',
 
     // Patient Dashboard
     'patient.welcome': 'Bonjour',
@@ -191,6 +192,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.statistics': 'الإحصائيات',
     'nav.monitoring': 'المراقبة',
     'nav.logout': 'تسجيل الخروج',
+    'nav.profile': 'ملفي الشخصي',
 
     // Patient Dashboard
     'patient.welcome': 'مرحباً',
