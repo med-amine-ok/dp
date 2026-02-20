@@ -204,15 +204,7 @@ const PatientsPage: React.FC = () => {
                           >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8" 
-                            title={t('doctor.schedule')}
-                            onClick={() => navigate('/doctor/tracking')}
-                          >
-                            <Calendar className="h-4 w-4" />
-                          </Button>
+
                         </div>
                       </TableCell>
                     </TableRow>

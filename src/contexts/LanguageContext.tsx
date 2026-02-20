@@ -38,7 +38,6 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.chat': 'Chat avec le médecin',
     'nav.games': 'Jeux',
     'nav.patients': 'Patients',
-    'nav.dialysisTracking': 'Suivi de dialyse',
     'nav.analytics': 'Analytique',
     'nav.userManagement': 'Gestion des utilisateurs',
     'nav.statistics': 'Statistiques',
@@ -127,19 +126,6 @@ const translations: Record<Language, Record<string, string>> = {
     'doctor.openChat': 'Ouvrir chat',
     'doctor.schedule': 'Planifier séance',
 
-    // Dialysis Tracking
-    'tracking.title': 'Suivi de dialyse',
-    'tracking.calendar': 'Calendrier des séances',
-    'tracking.history': 'Historique du patient',
-    'tracking.duration': 'Durée',
-    'tracking.weight': 'Changement de poids',
-    'tracking.vitals': 'Signes vitaux',
-    'tracking.complications': 'Complications',
-    'tracking.adjustments': 'Ajustements',
-    'tracking.completed': 'Terminé',
-    'tracking.scheduled': 'Planifié',
-    'tracking.missed': 'Manqué',
-
     // Admin Dashboard
     'admin.welcome': 'Tableau de bord administrateur',
     'admin.totalPatients': 'Total patients',
@@ -200,7 +186,6 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.chat': 'الدردشة مع الطبيب',
     'nav.games': 'الألعاب',
     'nav.patients': 'المرضى',
-    'nav.dialysisTracking': 'متابعة غسيل الكلى',
     'nav.analytics': 'التحليلات',
     'nav.userManagement': 'إدارة المستخدمين',
     'nav.statistics': 'الإحصائيات',
@@ -288,19 +273,6 @@ const translations: Record<Language, Record<string, string>> = {
     'doctor.viewDetails': 'عرض التفاصيل',
     'doctor.openChat': 'فتح الدردشة',
     'doctor.schedule': 'جدولة جلسة',
-
-    // Dialysis Tracking
-    'tracking.title': 'متابعة غسيل الكلى',
-    'tracking.calendar': 'تقويم الجلسات',
-    'tracking.history': 'سجل المريض',
-    'tracking.duration': 'المدة',
-    'tracking.weight': 'تغير الوزن',
-    'tracking.vitals': 'العلامات الحيوية',
-    'tracking.complications': 'المضاعفات',
-    'tracking.adjustments': 'التعديلات',
-    'tracking.completed': 'مكتمل',
-    'tracking.scheduled': 'مجدول',
-    'tracking.missed': 'فائت',
 
     // Admin Dashboard
     'admin.welcome': 'لوحة تحكم المسؤول',

@@ -155,54 +155,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 2. Create corresponding record in patients/doctors table if not exists
       if (role === 'patient') {
-        const { error: patientError } = await supabase
+        const { data: existingPatient, error: checkError } = await supabase
           .from('patients')
-          .insert({
-            user_id: user.id,
-            name_ar: user.name,
-            name_fr: user.name,
-            age: 0, // Default
-            email: user.email // Make sure to add email column to patients table if needed or remove this
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        // Note: schema doesn't have email in patients table, removing it from insert
-        /*
-        .insert({
-          user_id: user.id,
-          name_ar: user.name,
-          name_fr: user.name,
-          age: 10, // Default age
-          dialysis_type: 'HD',
-          status: 'active'
-        })
-        */
+        if (!existingPatient) {
+          const { error: patientError } = await supabase
+            .from('patients')
+            .insert({
+              user_id: user.id,
+              name_ar: user.name,
+              name_fr: user.name,
+              age: 18, // Default age
+              dialysis_type: 'HD', // Default dialysis type
+              status: 'active' // Default status
+            });
 
-        // Actually, let's just insert with minimal required fields based on schema
-        // Schema: user_id, name_ar, name_fr, age (NOT NULL)
-        const { error: pError } = await supabase
-          .from('patients')
-          .upsert({
-            user_id: user.id,
-            name_ar: user.name,
-            name_fr: user.name,
-            
-          }, { onConflict: 'user_id' });
+          if (patientError) {
+            console.error("Error creating patient record:", patientError);
+            throw patientError;
+          }
+        }
 
-        if (pError) console.error("Error creating patient record:", pError);
 
       } else if (role === 'doctor') {
-        // Schema: user_id, name_ar, name_fr
-        const { error: dError } = await supabase
+        // Schema: user_id, name_ar, name_fr, specialization
+        const { data: existingDoctor, error: checkError } = await supabase
           .from('doctors')
-          .upsert({
-            user_id: user.id,
-            name_ar: user.name,
-            name_fr: user.name
-          }, { onConflict: 'user_id' });
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        if (dError) console.error("Error creating doctor record:", dError);
+        if (!existingDoctor) {
+          const { error: dError } = await supabase
+            .from('doctors')
+            .insert({
+              user_id: user.id,
+              name_ar: user.name,
+              name_fr: user.name,
+              specialization: 'General Practitioner'
+            });
+
+          if (dError) {
+            console.error("Error creating doctor record:", dError);
+            throw dError;
+          }
+        }
       }
 
     } catch (error) {

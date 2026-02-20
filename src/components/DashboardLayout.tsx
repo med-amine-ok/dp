@@ -68,7 +68,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           { key: 'nav.patients', icon: Users, path: '/doctor/patients' },
           { key: 'nav.chat', icon: MessageCircle, path: '/doctor/chat' },
           { key: 'nav.healthForm', icon: FileText, path: '/doctor/health-forms' },
-          { key: 'nav.dialysisTracking', icon: Activity, path: '/doctor/tracking' },
         ];
       case 'admin':
         return [

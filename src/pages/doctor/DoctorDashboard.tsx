@@ -46,17 +46,44 @@ const DoctorDashboard: React.FC = () => {
           .from('doctors')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (doctorError) {
           console.error('Error fetching doctor profile:', doctorError);
-          // Check if it's because no rows (maybe new doctor?)
-          // If so, we might want to handle it gracefully or redirect
           setLoading(false);
           return;
         }
 
-        const doctorId = doctorData.id;
+        // If no doctor found, try to create one
+        if (!doctorData) {
+          console.warn('No doctor record found, creating one...');
+          const { data: newDoctor, error: createError } = await supabase
+            .from('doctors')
+            .insert({
+              user_id: user.id,
+              name_ar: user.name,
+              name_fr: user.name,
+              specialization: 'General Practitioner'
+            })
+            .select('id')
+            .single();
+
+          if (createError) {
+            console.error('Error creating doctor record:', createError);
+            setLoading(false);
+            return;
+          }
+
+          if (!newDoctor) {
+            console.error('Failed to create doctor record');
+            setLoading(false);
+            return;
+          }
+
+          var doctorId = newDoctor.id;
+        } else {
+          var doctorId = doctorData.id;
+        }
 
         // 2. Fetch Patients assigned to this doctor
         const { data: patientsData, error: patientsError } = await supabase
@@ -228,13 +255,10 @@ const DoctorDashboard: React.FC = () => {
 
           {/* Today's Schedule */}
           <Card className="card-shadow">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle className="text-lg">
                 {language === 'ar' ? 'جدول اليوم' : 'Planning du jour'}
               </CardTitle>
-              <Link to="/doctor/tracking" className="text-sm text-primary hover:underline">
-                {language === 'ar' ? 'عرض الكل' : 'Voir tout'}
-              </Link>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr, ar } from 'date-fns/locale';
@@ -56,10 +57,11 @@ const HealthFormPage: React.FC = () => {
 
   const painEmojis = [
     { value: 0, emoji: '😊', label: language === 'ar' ? 'لا ألم' : 'Pas de douleur' },
-    { value: 1, emoji: '🙂', label: language === 'ar' ? 'قليل' : 'Un peu' },
-    { value: 2, emoji: '😐', label: language === 'ar' ? 'متوسط' : 'Moyen' },
-    { value: 3, emoji: '😣', label: language === 'ar' ? 'مؤلم' : 'Douloureux' },
-    { value: 4, emoji: '😭', label: language === 'ar' ? 'مؤلم جداً' : 'Très douloureux' },
+    { value: 1, emoji: '🙂', label: language === 'ar' ? 'قليل جداً' : 'Très peu' },
+    { value: 2, emoji: '😐', label: language === 'ar' ? 'قليل' : 'Un peu' },
+    { value: 3, emoji: '😕', label: language === 'ar' ? 'متوسط' : 'Moyen' },
+    { value: 4, emoji: '😣', label: language === 'ar' ? 'مؤلم' : 'Douloureux' },
+    { value: 5, emoji: '😭', label: language === 'ar' ? 'مؤلم جداً' : 'Très douloureux' },
   ];
 
   const symptomOptions = [
@@ -126,9 +128,6 @@ const HealthFormPage: React.FC = () => {
     return (
       <DashboardLayout role="patient">
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center animate-slide-up">
-          <div className="animate-celebration">
-            <KidneyMascot size="lg" mood="happy" />
-          </div>
           <PartyPopper className="h-16 w-16 text-playful-yellow mt-6 animate-bounce-gentle" />
           <h1 className="text-3xl font-bold text-foreground mt-4">
             {t('health.submitted')} 🎉
@@ -271,22 +270,48 @@ const HealthFormPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-lg">{t('health.painLevel')} 💪</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap justify-center gap-4">
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="text-center flex-1">
+                  <div className="text-5xl font-bold text-playful-orange mb-2">
+                    {painLevel !== null ? painLevel : 0}
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {painLevel !== null ? painEmojis[painLevel].label : (language === 'ar' ? 'اختر مستوى الألم' : 'Sélectionner')}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <Slider
+                  value={[painLevel !== null ? painLevel : 0]}
+                  onValueChange={(value) => setPainLevel(value[0])}
+                  min={0}
+                  max={5}
+                  step={1}
+                  className="w-full cursor-pointer"
+                />
+                
+                <div className="flex justify-between text-xs text-muted-foreground px-1">
+                  <span>{language === 'ar' ? 'بلا ألم' : 'Sans douleur'}</span>
+                  <span>{language === 'ar' ? 'ألم شديد جداً' : 'Très douloureux'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2">
                 {painEmojis.map((p) => (
                   <button
                     key={p.value}
                     type="button"
                     onClick={() => setPainLevel(p.value)}
                     className={cn(
-                      'flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-200',
+                      'flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 border-2',
                       painLevel === p.value
-                        ? 'bg-playful-orange text-white scale-110'
-                        : 'bg-secondary hover:bg-secondary/80'
+                        ? 'bg-playful-orange text-white border-playful-orange scale-105'
+                        : 'bg-secondary hover:bg-secondary/80 border-transparent'
                     )}
                   >
-                    <span className="text-3xl">{p.emoji}</span>
-                    <span className="text-xs font-medium">{p.label}</span>
+                    <span className="text-2xl">{p.emoji}</span>
                   </button>
                 ))}
               </div>

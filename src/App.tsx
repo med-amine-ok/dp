@@ -23,7 +23,6 @@ import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import PatientsPage from "./pages/doctor/PatientsPage";
 import DoctorChatPage from "./pages/doctor/DoctorChatPage";
 import DoctorHealthFormsPage from "./pages/doctor/DoctorHealthFormsPage";
-import DialysisTrackingPage from "./pages/doctor/DialysisTrackingPage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -59,7 +58,6 @@ const App = () => (
               <Route path="/doctor/patients" element={<PatientsPage />} />
               <Route path="/doctor/chat" element={<DoctorChatPage />} />
               <Route path="/doctor/health-forms" element={<DoctorHealthFormsPage />} />
-              <Route path="/doctor/tracking" element={<DialysisTrackingPage />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />

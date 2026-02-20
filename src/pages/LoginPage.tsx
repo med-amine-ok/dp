@@ -170,15 +170,6 @@ const LoginPage: React.FC = () => {
               {t('auth.subtitle')}
             </p>
 
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={handleGoogleLogin}
-                className="bg-[#0D4E80] hover:bg-[#0A3D66] text-white px-8 py-6 text-lg rounded-md font-bold w-32"
-              >
-                {t('games.play')}
-              </Button>
-            </div>
-
             {/* Website Info / Features */}
             <div className="grid gap-6 mt-12 bg-white/40 p-6 rounded-2xl backdrop-blur-sm border border-white/50 shadow-sm">
               <div className="flex items-start gap-4">
