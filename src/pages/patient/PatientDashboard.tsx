@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import DashboardCard from '@/components/DashboardCard';
 import AssignDoctorCard from '@/components/AssignDoctorCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, Activity, UserCircle, ArrowRight } from 'lucide-react';
+import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, UserCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -14,7 +14,6 @@ const PatientDashboard: React.FC = () => {
   const { user } = useAuth();
 
   const [stats, setStats] = useState({
-    sessions: 0,
     videos: 0,
     games: 0,
     stars: 0,
@@ -27,29 +26,13 @@ const PatientDashboard: React.FC = () => {
 
     const fetchStats = async () => {
       try {
-        // 1. Get Patient ID
-        const { data: patientData } = await supabase
-          .from('patients')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        let sessionCount = 0;
-        if (patientData) {
-          const { count } = await supabase
-            .from('dialysis_sessions')
-            .select('*', { count: 'exact', head: true })
-            .eq('patient_id', patientData.id);
-          sessionCount = count || 0;
-        }
-
-        // 2. Video Progress
+        // 1. Video Progress
         const { count: videoCount } = await supabase
           .from('video_progress')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // 3. Game Scores & Stars
+        // 2. Game Scores & Stars
         const { data: gameData } = await supabase
           .from('game_scores')
           .select('stars')
@@ -59,7 +42,6 @@ const PatientDashboard: React.FC = () => {
         const totalStars = gameData?.reduce((acc, curr) => acc + (curr.stars || 0), 0) || 0;
 
         setStats({
-          sessions: sessionCount,
           videos: videoCount || 0,
           games: gameCount,
           stars: totalStars,
@@ -72,7 +54,7 @@ const PatientDashboard: React.FC = () => {
 
     fetchStats();
 
-    // Also check profile completeness
+    // Check profile completeness
     const checkProfile = async () => {
       const { data } = await supabase
         .from('patients')
@@ -101,13 +83,6 @@ const PatientDashboard: React.FC = () => {
       icon: FileText,
       path: '/patient/health-form',
       color: 'bg-playful-green/20 text-playful-green',
-    },
-    {
-      title: language === 'ar' ? 'الجلسات' : 'Séances',
-      description: language === 'ar' ? 'إدارة الجلسات' : 'Gérer les séances',
-      icon: Activity,
-      path: '/patient/sessions',
-      color: 'bg-playful-pink/20 text-playful-pink',
     },
     {
       title: language === 'ar' ? 'الدردشة' : 'Chat',
@@ -150,7 +125,6 @@ const PatientDashboard: React.FC = () => {
           <div className="flex-1">
             <AssignDoctorCard />
           </div>
-
         </div>
 
         {/* Profile Completion Banner */}
@@ -181,14 +155,7 @@ const PatientDashboard: React.FC = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <DashboardCard
-            title={language === 'ar' ? 'الجلسات' : 'Séances'}
-            value={stats.sessions.toString()}
-            subtitle={language === 'ar' ? 'هذا الشهر' : 'Ce mois'}
-            icon={Heart}
-            color="success"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DashboardCard
             title={language === 'ar' ? 'الفيديوهات' : 'Vidéos'}
             value={stats.videos.toString()}
@@ -212,14 +179,12 @@ const PatientDashboard: React.FC = () => {
           />
         </div>
 
-
-
         {/* Quick Links */}
         <div>
           <h2 className="text-xl font-bold text-foreground mb-4">
             {language === 'ar' ? 'روابط سريعة' : 'Accès rapide'}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {quickLinks.map((link) => (
               <Link key={link.path} to={link.path}>
                 <Card className="h-full hover:scale-105 transition-transform duration-200 card-shadow hover:card-shadow-hover cursor-pointer">
@@ -248,7 +213,7 @@ const PatientDashboard: React.FC = () => {
             <p className="text-foreground">
               {language === 'ar'
                 ? 'اشرب الماء بانتظام! الماء يساعد كليتيك على العمل بشكل أفضل. 💧'
-                : 'Bois de l\'eau régulièrement ! L\'eau aide tes reins à bien fonctionner. 💧'}
+                : "Bois de l'eau régulièrement ! L'eau aide tes reins à bien fonctionner. 💧"}
             </p>
           </CardContent>
         </Card>

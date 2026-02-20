@@ -45,10 +45,10 @@ const StatisticsPage: React.FC = () => {
   ];
 
   const treatmentStats = [
-    { label: language === 'ar' ? 'جلسات مكتملة' : 'Séances complétées', value: 1247, change: '+12%' },
-    { label: language === 'ar' ? 'جلسات ملغاة' : 'Séances annulées', value: 23, change: '-5%' },
-    { label: language === 'ar' ? 'متوسط المدة' : 'Durée moyenne', value: '3.5h', change: '0%' },
     { label: language === 'ar' ? 'مرضى جدد' : 'Nouveaux patients', value: 18, change: '+22%' },
+    { label: language === 'ar' ? 'نماذج صحية مرسلة' : 'Formulaires de santé envoyés', value: 342, change: '+15%' },
+    { label: language === 'ar' ? 'فيديوهات شوهدت' : 'Vidéos regardées', value: 519, change: '+30%' },
+    { label: language === 'ar' ? 'ألعاب تعليمية' : 'Jeux joués', value: 207, change: '+18%' },
   ];
 
   return (
@@ -110,11 +110,10 @@ const StatisticsPage: React.FC = () => {
                 <div key={index} className="text-center p-4 bg-muted/50 rounded-xl">
                   <p className="text-3xl font-bold text-foreground mb-1">{item.value}</p>
                   <p className="text-sm text-muted-foreground mb-2">{item.label}</p>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    item.change.startsWith('+') ? 'bg-success/20 text-success' :
-                    item.change.startsWith('-') ? 'bg-destructive/20 text-destructive' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${item.change.startsWith('+') ? 'bg-success/20 text-success' :
+                      item.change.startsWith('-') ? 'bg-destructive/20 text-destructive' :
+                        'bg-muted text-muted-foreground'
+                    }`}>
                     {item.change}
                   </span>
                 </div>
@@ -158,8 +157,8 @@ const StatisticsPage: React.FC = () => {
                   <div key={index}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-muted-foreground">
-                        {type.type === 'HD' 
-                          ? (language === 'ar' ? 'غسيل الدم' : 'Hémodialyse') 
+                        {type.type === 'HD'
+                          ? (language === 'ar' ? 'غسيل الدم' : 'Hémodialyse')
                           : (language === 'ar' ? 'غسيل بريتوني' : 'Dialyse péritonéale')}
                       </span>
                       <span className="font-medium">{type.count} {language === 'ar' ? 'مريض' : 'patients'}</span>

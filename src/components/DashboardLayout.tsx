@@ -64,6 +64,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           { key: 'nav.games', icon: Gamepad2, path: '/patient/games' },
           { key: 'nav.profile', icon: User, path: '/patient/profile' },
         ];
+      // Note: Sessions nav item removed
       case 'doctor':
         return [
           { key: 'nav.home', icon: Home, path: '/doctor' },

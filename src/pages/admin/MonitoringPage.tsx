@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { 
-  Settings, 
-  Activity, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
+import {
+  Settings,
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
   Server,
   Database,
   Wifi,
@@ -22,53 +22,50 @@ const MonitoringPage: React.FC = () => {
   const { language, t } = useLanguage();
 
   const systemStatus = [
-    { 
-      name: language === 'ar' ? 'الخادم الرئيسي' : 'Serveur principal', 
-      status: 'online', 
+    {
+      name: language === 'ar' ? 'الخادم الرئيسي' : 'Serveur principal',
+      status: 'online',
       uptime: '99.9%',
-      icon: Server 
+      icon: Server
     },
-    { 
-      name: language === 'ar' ? 'قاعدة البيانات' : 'Base de données', 
-      status: 'online', 
+    {
+      name: language === 'ar' ? 'قاعدة البيانات' : 'Base de données',
+      status: 'online',
       uptime: '99.8%',
-      icon: Database 
+      icon: Database
     },
-    { 
-      name: language === 'ar' ? 'خدمة المصادقة' : 'Service d\'authentification', 
-      status: 'online', 
+    {
+      name: language === 'ar' ? 'خدمة المصادقة' : 'Service d\'authentification',
+      status: 'online',
       uptime: '100%',
-      icon: Wifi 
+      icon: Wifi
     },
-    { 
-      name: language === 'ar' ? 'نظام النسخ الاحتياطي' : 'Système de backup', 
-      status: 'warning', 
+    {
+      name: language === 'ar' ? 'نظام النسخ الاحتياطي' : 'Système de backup',
+      status: 'warning',
       uptime: '95.2%',
-      icon: RefreshCw 
+      icon: RefreshCw
     },
   ];
 
-  const activeSessions = [
-    { 
-      patient: language === 'ar' ? 'أحمد محمد' : 'Ahmed Mohamed', 
-      doctor: 'Dr. Karim',
-      startTime: '09:00',
-      duration: '2h 30min',
-      status: 'active'
+  const activeUsers = [
+    {
+      name: language === 'ar' ? 'أحمد محمد' : 'Ahmed Mohamed',
+      role: language === 'ar' ? 'مريض' : 'Patient',
+      lastSeen: '2 min',
+      status: 'online'
     },
-    { 
-      patient: language === 'ar' ? 'سارة علي' : 'Sara Ali', 
-      doctor: 'Dr. Fatima',
-      startTime: '09:30',
-      duration: '2h 00min',
-      status: 'active'
+    {
+      name: language === 'ar' ? 'د. كريم' : 'Dr. Karim',
+      role: language === 'ar' ? 'طبيب' : 'Médecin',
+      lastSeen: '5 min',
+      status: 'online'
     },
-    { 
-      patient: language === 'ar' ? 'يوسف حسن' : 'Youssef Hassan', 
-      doctor: 'Dr. Karim',
-      startTime: '10:00',
-      duration: '1h 30min',
-      status: 'active'
+    {
+      name: language === 'ar' ? 'سارة علي' : 'Sara Ali',
+      role: language === 'ar' ? 'مريضة' : 'Patiente',
+      lastSeen: '8 min',
+      status: 'online'
     },
   ];
 
@@ -164,7 +161,7 @@ const MonitoringPage: React.FC = () => {
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {systemStatus.map((system, index) => (
-                <div 
+                <div
                   key={index}
                   className="p-4 rounded-xl bg-muted/50 flex items-center gap-4"
                 >
@@ -193,34 +190,34 @@ const MonitoringPage: React.FC = () => {
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Active Sessions */}
+          {/* Active Users */}
           <Card className="card-shadow">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                {language === 'ar' ? 'الجلسات النشطة' : 'Séances actives'}
+                {language === 'ar' ? 'المستخدمون النشطون' : 'Utilisateurs actifs'}
                 <Badge className="ml-2 bg-success/20 text-success border-success/30">
-                  {activeSessions.length}
+                  {activeUsers.length}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {activeSessions.map((session, index) => (
-                  <div 
+                {activeUsers.map((u, index) => (
+                  <div
                     key={index}
                     className="p-3 rounded-lg bg-muted/50 flex items-center justify-between"
                   >
-                    <div>
-                      <p className="font-medium text-foreground text-sm">{session.patient}</p>
-                      <p className="text-xs text-muted-foreground">{session.doctor}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{session.startTime}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-success" />
+                      <div>
+                        <p className="font-medium text-foreground text-sm">{u.name}</p>
+                        <p className="text-xs text-muted-foreground">{u.role}</p>
                       </div>
-                      <p className="text-xs text-success font-medium">{session.duration}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{u.lastSeen}</span>
                     </div>
                   </div>
                 ))}
@@ -239,7 +236,7 @@ const MonitoringPage: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 {alerts.map((alert, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="p-3 rounded-lg bg-muted/50 flex items-start gap-3"
                   >

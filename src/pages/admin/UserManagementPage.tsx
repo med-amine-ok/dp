@@ -27,7 +27,6 @@ interface Doctor {
   name_fr: string;
   specialization: string;
   patientCount?: number;
-  activeSessions?: number;
 }
 
 const UserManagementPage: React.FC = () => {
@@ -55,8 +54,6 @@ const UserManagementPage: React.FC = () => {
 
         if (doctorsError) throw doctorsError;
 
-        // Calculate counts for each doctor
-        const today = new Date().toISOString().split('T')[0];
         const doctorsWithCounts = await Promise.all(
           (doctorsData || []).map(async (doctor) => {
             // Patient count
@@ -65,17 +62,9 @@ const UserManagementPage: React.FC = () => {
               .select('*', { count: 'exact', head: true })
               .eq('assigned_doctor_id', doctor.id);
 
-            // Active sessions today
-            const { count: activeSessions } = await supabase
-              .from('dialysis_sessions')
-              .select('*', { count: 'exact', head: true })
-              .eq('session_date', today)
-              .in('status', ['scheduled', 'completed']);
-
             return {
               ...doctor,
               patientCount: patientCount || 0,
-              activeSessions: activeSessions || 0,
             };
           })
         );
@@ -174,7 +163,7 @@ const UserManagementPage: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('admin.name')}</TableHead>
-                      
+
                       <TableHead>{t('admin.assignedDoctor')}</TableHead>
                       <TableHead>{t('admin.registrationDate')}</TableHead>
                       <TableHead>{t('admin.status')}</TableHead>
@@ -205,7 +194,7 @@ const UserManagementPage: React.FC = () => {
                                 </span>
                               </div>
                             </TableCell>
-                            
+
                             <TableCell>
                               {doctor ? (language === 'ar' ? doctor.name_ar : doctor.name_fr) : '-'}
                             </TableCell>
@@ -251,7 +240,6 @@ const UserManagementPage: React.FC = () => {
                       <TableHead>{t('admin.name')}</TableHead>
                       <TableHead>{t('admin.specialization')}</TableHead>
                       <TableHead>{t('admin.patientCount')}</TableHead>
-                      <TableHead>{t('admin.activeSessions')}</TableHead>
                       <TableHead className="text-center">{t('admin.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -278,11 +266,6 @@ const UserManagementPage: React.FC = () => {
                           <TableCell className="text-muted-foreground">{doctor.specialization}</TableCell>
                           <TableCell>
                             <span className="font-semibold">{doctor.patientCount}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="px-2 py-1 bg-success/20 text-success rounded-full text-sm font-medium">
-                              {doctor.activeSessions}
-                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-2">

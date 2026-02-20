@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardCard from '@/components/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Activity, MessageCircle, Calendar, AlertTriangle } from 'lucide-react';
+import { Users, Activity, MessageCircle, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatusBadge from '@/components/StatusBadge';
 import DialysisTypeBadge from '@/components/DialysisTypeBadge';
@@ -20,20 +20,10 @@ interface Patient {
   last_session?: string;
 }
 
-interface DialysisSession {
-  id: string;
-  patient_id: string;
-  session_date: string;
-  duration: number;
-  status: 'completed' | 'scheduled' | 'missed';
-  patient?: Patient;
-}
-
 const DoctorDashboard: React.FC = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [todaySessions, setTodaySessions] = useState<DialysisSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +44,8 @@ const DoctorDashboard: React.FC = () => {
           return;
         }
 
+        let doctorId: string;
+
         // If no doctor found, try to create one
         if (!doctorData) {
           console.warn('No doctor record found, creating one...');
@@ -63,26 +55,19 @@ const DoctorDashboard: React.FC = () => {
               user_id: user.id,
               name_ar: user.name,
               name_fr: user.name,
-              specialization: 'General Practitioner'
+              specialization: 'General Practitioner',
             })
             .select('id')
             .single();
 
-          if (createError) {
+          if (createError || !newDoctor) {
             console.error('Error creating doctor record:', createError);
             setLoading(false);
             return;
           }
-
-          if (!newDoctor) {
-            console.error('Failed to create doctor record');
-            setLoading(false);
-            return;
-          }
-
-          var doctorId = newDoctor.id;
+          doctorId = newDoctor.id;
         } else {
-          var doctorId = doctorData.id;
+          doctorId = doctorData.id;
         }
 
         // 2. Fetch Patients assigned to this doctor
@@ -94,34 +79,6 @@ const DoctorDashboard: React.FC = () => {
         if (patientsError) throw patientsError;
 
         setPatients(patientsData || []);
-
-        // 3. Fetch Today's Sessions for these patients
-        // Get today's date in YYYY-MM-DD format
-        const today = new Date().toISOString().split('T')[0];
-
-        // We only want sessions for patients assigned to this doctor.
-        // If we have patients, we can filter by patient_id IN (patientIds) or just query all sessions for today and filter manually (since we might not have many sessions).
-        // A better approach is to rely on RLS if set up correctly, but let's be explicit.
-
-        if (patientsData && patientsData.length > 0) {
-          const patientIds = patientsData.map(p => p.id);
-          const { data: sessionsData, error: sessionsError } = await supabase
-            .from('dialysis_sessions')
-            .select('*')
-            .eq('session_date', today)
-            .in('patient_id', patientIds);
-
-          if (sessionsError) throw sessionsError;
-
-          // Map patients to sessions for easy display
-          const sessionsWithPatients = sessionsData?.map(session => ({
-            ...session,
-            patient: patientsData.find(p => p.id === session.patient_id)
-          })) || [];
-
-          setTodaySessions(sessionsWithPatients);
-        }
-
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -134,6 +91,17 @@ const DoctorDashboard: React.FC = () => {
 
   const criticalPatients = patients.filter(p => p.status === 'critical');
   const activePatientsCount = patients.filter(p => p.status === 'active').length;
+  const recoveringCount = patients.filter(p => p.status === 'recovering').length;
+
+  if (loading) {
+    return (
+      <DashboardLayout role="doctor">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="doctor">
@@ -151,7 +119,7 @@ const DoctorDashboard: React.FC = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DashboardCard
             title={language === 'ar' ? 'المرضى' : 'Patients'}
             value={patients.length.toString()}
@@ -167,15 +135,8 @@ const DoctorDashboard: React.FC = () => {
             color="success"
           />
           <DashboardCard
-            title={language === 'ar' ? 'اليوم' : 'Aujourd\'hui'}
-            value={todaySessions.length.toString()}
-            subtitle={language === 'ar' ? 'جلسات مجدولة' : 'Séances prévues'}
-            icon={Calendar}
-            color="accent"
-          />
-          <DashboardCard
             title={language === 'ar' ? 'رسائل' : 'Messages'}
-            value="0" // Placeholder for now
+            value="0"
             subtitle={language === 'ar' ? 'غير مقروءة' : 'Non lus'}
             icon={MessageCircle}
             color="warning"
@@ -205,7 +166,6 @@ const DoctorDashboard: React.FC = () => {
                         <p className="font-medium text-foreground">
                           {language === 'ar' ? patient.name_ar : patient.name_fr}
                         </p>
-                        
                       </div>
                     </div>
                     <StatusBadge status={patient.status} />
@@ -216,20 +176,24 @@ const DoctorDashboard: React.FC = () => {
           </Card>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Recent Patients */}
-          <Card className="card-shadow">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'المرضى الأخيرين' : 'Patients récents'}
-              </CardTitle>
-              <Link to="/doctor/patients" className="text-sm text-primary hover:underline">
-                {language === 'ar' ? 'عرض الكل' : 'Voir tout'}
-              </Link>
-            </CardHeader>
-            <CardContent>
+        {/* Patients List */}
+        <Card className="card-shadow">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">
+              {language === 'ar' ? 'المرضى المعيّنون' : 'Patients assignés'}
+            </CardTitle>
+            <Link to="/doctor/patients" className="text-sm text-primary hover:underline">
+              {language === 'ar' ? 'عرض الكل' : 'Voir tout'}
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {patients.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-6">
+                {language === 'ar' ? 'لا يوجد مرضى معيّنون بعد.' : 'Aucun patient assigné pour l\'instant.'}
+              </p>
+            ) : (
               <div className="space-y-4">
-                {patients.slice(0, 4).map((patient) => (
+                {patients.slice(0, 6).map((patient) => (
                   <div key={patient.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
@@ -243,6 +207,9 @@ const DoctorDashboard: React.FC = () => {
                         </p>
                         <div className="flex items-center gap-2">
                           <DialysisTypeBadge type={patient.dialysis_type} />
+                          <span className="text-xs text-muted-foreground">
+                            {patient.age} {language === 'ar' ? 'سنة' : 'ans'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -250,43 +217,9 @@ const DoctorDashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Today's Schedule */}
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'جدول اليوم' : 'Planning du jour'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {todaySessions.slice(0, 3).map((session) => {
-                  const patient = session.patient;
-                  return (
-                    <div key={session.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                          <Calendar className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">
-                            {patient ? (language === 'ar' ? patient.name_ar : patient.name_fr) : 'Unknown'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {session.duration} {language === 'ar' ? 'دقيقة' : 'min'}
-                          </p>
-                        </div>
-                      </div>
-                      <StatusBadge status={session.status} />
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

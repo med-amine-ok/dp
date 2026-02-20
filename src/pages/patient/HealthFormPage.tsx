@@ -281,7 +281,7 @@ const HealthFormPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <Slider
                   value={[painLevel !== null ? painLevel : 0]}
@@ -291,7 +291,7 @@ const HealthFormPage: React.FC = () => {
                   step={1}
                   className="w-full cursor-pointer"
                 />
-                
+
                 <div className="flex justify-between text-xs text-muted-foreground px-1">
                   <span>{language === 'ar' ? 'بلا ألم' : 'Sans douleur'}</span>
                   <span>{language === 'ar' ? 'ألم شديد جداً' : 'Très douloureux'}</span>

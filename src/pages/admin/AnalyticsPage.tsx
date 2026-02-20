@@ -27,12 +27,12 @@ const AnalyticsPage: React.FC = () => {
   const COLORS = ['hsl(213, 56%, 24%)', 'hsl(187, 70%, 60%)', 'hsl(152, 60%, 45%)', 'hsl(38, 92%, 50%)'];
 
   const monthlyData = [
-    { month: language === 'ar' ? 'يناير' : 'Jan', patients: 95, sessions: 280 },
-    { month: language === 'ar' ? 'فبراير' : 'Fév', patients: 102, sessions: 310 },
-    { month: language === 'ar' ? 'مارس' : 'Mar', patients: 108, sessions: 330 },
-    { month: language === 'ar' ? 'أبريل' : 'Avr', patients: 115, sessions: 350 },
-    { month: language === 'ar' ? 'مايو' : 'Mai', patients: 120, sessions: 365 },
-    { month: language === 'ar' ? 'يونيو' : 'Juin', patients: 127, sessions: 385 },
+    { month: language === 'ar' ? 'يناير' : 'Jan', patients: 95, satisfaction: 82 },
+    { month: language === 'ar' ? 'فبراير' : 'Fév', patients: 102, satisfaction: 84 },
+    { month: language === 'ar' ? 'مارس' : 'Mar', patients: 108, satisfaction: 87 },
+    { month: language === 'ar' ? 'أبريل' : 'Avr', patients: 115, satisfaction: 85 },
+    { month: language === 'ar' ? 'مايو' : 'Mai', patients: 120, satisfaction: 90 },
+    { month: language === 'ar' ? 'يونيو' : 'Juin', patients: 127, satisfaction: 92 },
   ];
 
   const satisfactionData = [
@@ -94,12 +94,12 @@ const AnalyticsPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Sessions Trend */}
+          {/* Satisfaction Trend */}
           <Card className="card-shadow">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                {language === 'ar' ? 'اتجاه الجلسات' : 'Tendance des séances'}
+                {language === 'ar' ? 'اتجاه الرضا' : 'Tendance de satisfaction'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -107,7 +107,7 @@ const AnalyticsPage: React.FC = () => {
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" domain={[70, 100]} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -117,7 +117,7 @@ const AnalyticsPage: React.FC = () => {
                   />
                   <Line
                     type="monotone"
-                    dataKey="sessions"
+                    dataKey="satisfaction"
                     stroke="hsl(152, 60%, 45%)"
                     strokeWidth={3}
                     dot={{ fill: 'hsl(152, 60%, 45%)', strokeWidth: 2 }}
