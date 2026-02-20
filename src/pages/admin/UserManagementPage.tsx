@@ -10,8 +10,25 @@ import StatusBadge from '@/components/StatusBadge';
 import DialysisTypeBadge from '@/components/DialysisTypeBadge';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Users, Search, Eye, Pencil, Ban, Stethoscope, Mail, Phone, RefreshCw } from 'lucide-react';
+import { Users, Search, Pencil, Ban, Stethoscope, Mail, Phone, RefreshCw, Save, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Patient {
   id: string;
@@ -21,7 +38,7 @@ interface Patient {
   dialysis_type: 'HD' | 'PD';
   status: 'active' | 'recovering' | 'critical';
   assigned_doctor_id?: string;
-  registration_date: string;
+  registration_date?: string;
   created_at: string;
 }
 
@@ -39,6 +56,12 @@ const UserManagementPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dialog State
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userType, setUserType] = useState<'patient' | 'doctor' | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<any>(null);
 
   const fetchData = async () => {
     try {
@@ -60,7 +83,6 @@ const UserManagementPage: React.FC = () => {
 
       const doctorsWithCounts = await Promise.all(
         (doctorsData || []).map(async (doctor) => {
-          // Patient count
           const { count: patientCount } = await supabase
             .from('patients')
             .select('*', { count: 'exact', head: true })
@@ -77,6 +99,7 @@ const UserManagementPage: React.FC = () => {
       setDoctors(doctorsWithCounts);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء تحميل البيانات' : 'Erreur lors du chargement des données');
     } finally {
       setLoading(false);
     }
@@ -86,20 +109,79 @@ const UserManagementPage: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleAction = (user: any, action: 'edit' | 'delete', type: 'patient' | 'doctor') => {
+    const name = language === 'ar' ? user.name_ar : user.name_fr;
+
+    if (action === 'delete') {
+      const confirmMsg = language === 'ar'
+        ? `هل أنت متأكد من حذف ${name}؟ لا يمكن التراجع عن هذا الإجراء.`
+        : `Êtes-vous sûr de vouloir supprimer ${name} ? Cette action est irréversible.`;
+
+      if (window.confirm(confirmMsg)) {
+        performDelete(user.id, type);
+      }
+      return;
+    }
+
+    setSelectedUser(user);
+    setUserType(type);
+    setFormData({ ...user });
+    setIsDialogOpen(true);
+  };
+
+  const performDelete = async (id: string, type: 'patient' | 'doctor') => {
+    const table = type === 'patient' ? 'patients' : 'doctors';
+    try {
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw error;
+
+      toast.success(language === 'ar' ? 'تم الحذف بنجاح' : 'Supprimé avec succès');
+      fetchData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error(language === 'ar' ? 'فشل الحذف' : 'Échec de la suppression');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData || !userType) return;
+
+    const table = userType === 'patient' ? 'patients' : 'doctors';
+    try {
+      const dataToUpdate = { ...formData };
+      delete dataToUpdate.patientCount;
+      delete dataToUpdate.created_at;
+
+      const { error } = await supabase
+        .from(table)
+        .update(dataToUpdate)
+        .eq('id', formData.id);
+
+      if (error) throw error;
+
+      toast.success(language === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Modifications enregistrées avec succès');
+      setIsDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de l\'enregistrement');
+    }
+  };
+
   const filteredPatients = patients.filter(patient => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      patient.name_fr.toLowerCase().includes(searchLower) ||
-      patient.name_ar.includes(searchQuery)
+      (patient.name_fr?.toLowerCase() || '').includes(searchLower) ||
+      (patient.name_ar || '').includes(searchQuery)
     );
   });
 
   const filteredDoctors = doctors.filter(doctor => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      doctor.name_fr.toLowerCase().includes(searchLower) ||
-      doctor.name_ar.includes(searchQuery) ||
-      doctor.specialization.toLowerCase().includes(searchLower)
+      (doctor.name_fr?.toLowerCase() || '').includes(searchLower) ||
+      (doctor.name_ar || '').includes(searchQuery) ||
+      (doctor.specialization?.toLowerCase() || '').includes(searchLower)
     );
   });
 
@@ -120,14 +202,14 @@ const UserManagementPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Users className="h-7 w-7 text-primary" />
+              <span className="text-2xl">⚙️</span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">
                 {t('nav.userManagement')}
               </h1>
               <p className="text-muted-foreground">
-                {language === 'ar' ? 'إدارة المرضى والأطباء' : 'Gérer les patients et les médecins'}
+                {language === 'ar' ? 'إدارة المرضى والأطباء وبياناتهم' : 'Gérer les données des patients et des médecins'}
               </p>
             </div>
           </div>
@@ -137,7 +219,7 @@ const UserManagementPage: React.FC = () => {
         </div>
 
         {/* Search */}
-        <Card className="card-shadow">
+        <Card className="card-shadow border-none">
           <CardContent className="p-4">
             <div className="relative max-w-md">
               <Search className={cn(
@@ -148,7 +230,7 @@ const UserManagementPage: React.FC = () => {
                 placeholder={language === 'ar' ? 'بحث عن اسم أو تخصص...' : 'Rechercher un nom ou spécialité...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={cn('rounded-full transition-all focus:ring-primary', isRTL ? 'pr-10' : 'pl-10')}
+                className={cn('rounded-xl transition-all border-muted focus:ring-primary', isRTL ? 'pr-10' : 'pl-10')}
               />
             </div>
           </CardContent>
@@ -156,39 +238,39 @@ const UserManagementPage: React.FC = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="patients" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6 p-1 bg-muted rounded-xl">
-            <TabsTrigger value="patients" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background">
+          <TabsList className="grid w-full max-md:max-w-full max-w-md grid-cols-2 mb-6 p-1 bg-muted/50 rounded-xl">
+            <TabsTrigger value="patients" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background transition-all">
               <Users className="h-4 w-4" />
               {language === 'ar' ? 'المرضى' : 'Patients'}
-              <Badge variant="secondary" className="ml-1">{patients.length}</Badge>
+              <Badge variant="secondary" className="ml-1 bg-primary/10 text-primary border-none">{patients.length}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="doctors" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background">
+            <TabsTrigger value="doctors" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background transition-all">
               <Stethoscope className="h-4 w-4" />
               {language === 'ar' ? 'الأطباء' : 'Médecins'}
-              <Badge variant="secondary" className="ml-1">{doctors.length}</Badge>
+              <Badge variant="secondary" className="ml-1 bg-accent/10 text-accent border-none">{doctors.length}</Badge>
             </TabsTrigger>
           </TabsList>
 
           {/* Patients Table */}
           <TabsContent value="patients">
-            <Card className="card-shadow overflow-hidden border-none">
+            <Card className="card-shadow overflow-hidden border-none rounded-xl">
               <CardContent className="p-0">
                 <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[250px]">{t('admin.name')}</TableHead>
-                      <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
-                      <TableHead>{t('admin.assignedDoctor')}</TableHead>
-                      <TableHead>{t('admin.registrationDate')}</TableHead>
-                      <TableHead>{t('admin.status')}</TableHead>
-                      <TableHead className="text-center">{t('admin.actions')}</TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="hover:bg-transparent border-none">
+                      <TableHead className="w-[250px] font-bold">{t('admin.name')}</TableHead>
+                      <TableHead className="font-bold">{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
+                      <TableHead className="font-bold">{t('admin.assignedDoctor')}</TableHead>
+                      <TableHead className="font-bold">{t('admin.registrationDate')}</TableHead>
+                      <TableHead className="font-bold">{t('admin.status')}</TableHead>
+                      <TableHead className="text-center font-bold">{t('admin.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredPatients.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                          <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <TableCell colSpan={6} className="text-center py-20 text-muted-foreground">
+                          <Users className="h-16 w-16 mx-auto mb-4 opacity-10" />
                           {language === 'ar' ? 'لا يوجد مرضى مطابقين للبحث' : 'Aucun patient trouvé'}
                         </TableCell>
                       </TableRow>
@@ -196,14 +278,14 @@ const UserManagementPage: React.FC = () => {
                       filteredPatients.map((patient) => {
                         const doctor = doctors.find(d => d.id === patient.assigned_doctor_id);
                         return (
-                          <TableRow key={patient.id} className="hover:bg-muted/30 transition-colors">
-                            <TableCell>
+                          <TableRow key={patient.id} className="hover:bg-muted/10 transition-colors border-muted/20">
+                            <TableCell className="py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center font-bold text-secondary-foreground border border-secondary">
-                                  {(language === 'ar' ? patient.name_ar : patient.name_fr).charAt(0)}
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-lg">
+                                  {(language === 'ar' ? patient.name_ar : patient.name_fr)?.charAt(0) || 'P'}
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-foreground">
+                                  <p className="font-bold text-foreground">
                                     {language === 'ar' ? patient.name_ar : patient.name_fr}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
@@ -217,9 +299,9 @@ const UserManagementPage: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               {doctor ? (
-                                <div className="flex items-center gap-2">
-                                  <Stethoscope className="h-3 w-3 text-primary" />
-                                  <span className="text-sm font-medium">{language === 'ar' ? doctor.name_ar : doctor.name_fr}</span>
+                                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/30 w-fit">
+                                  <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                                  <span className="text-xs font-semibold">{language === 'ar' ? doctor.name_ar : doctor.name_fr}</span>
                                 </div>
                               ) : <span className="text-muted-foreground text-xs italic">Non assigné</span>}
                             </TableCell>
@@ -231,13 +313,22 @@ const UserManagementPage: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center justify-center gap-2">
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:bg-primary/10" title={t('admin.view')}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-accent hover:bg-accent/10" title={t('admin.edit')}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-accent hover:bg-accent/10 rounded-lg"
+                                  title={t('admin.edit')}
+                                  onClick={() => handleAction(patient, 'edit', 'patient')}
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10" title={t('admin.deactivate')}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-destructive hover:bg-destructive/10 rounded-lg"
+                                  title={t('admin.deactivate')}
+                                  onClick={() => handleAction(patient, 'delete', 'patient')}
+                                >
                                   <Ban className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -254,62 +345,76 @@ const UserManagementPage: React.FC = () => {
 
           {/* Doctors Table */}
           <TabsContent value="doctors">
-            <Card className="card-shadow overflow-hidden border-none">
+            <Card className="card-shadow overflow-hidden border-none rounded-xl">
               <CardContent className="p-0">
                 <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[300px]">{t('admin.name')}</TableHead>
-                      <TableHead>{t('admin.specialization')}</TableHead>
-                      <TableHead>{t('admin.patientCount')}</TableHead>
-                      <TableHead className="text-center">{t('admin.actions')}</TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="hover:bg-transparent border-none">
+                      <TableHead className="w-[300px] font-bold">{t('admin.name')}</TableHead>
+                      <TableHead className="font-bold">{t('admin.specialization')}</TableHead>
+                      <TableHead className="font-bold">{t('admin.patientCount')}</TableHead>
+                      <TableHead className="text-center font-bold">{t('admin.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredDoctors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                          <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                          <Stethoscope className="h-16 w-16 mx-auto mb-4 opacity-10" />
                           {language === 'ar' ? 'لا يوجد أطباء مطابقين للبحث' : 'Aucun médecin trouvé'}
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredDoctors.map((doctor) => (
-                        <TableRow key={doctor.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell>
+                        <TableRow key={doctor.id} className="hover:bg-muted/10 transition-colors border-muted/20">
+                          <TableCell className="py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Stethoscope className="h-5 w-5 text-primary" />
+                              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <Stethoscope className="h-6 w-6 text-accent" />
                               </div>
                               <div>
-                                <p className="font-semibold text-foreground">
+                                <p className="font-bold text-foreground">
                                   {language === 'ar' ? doctor.name_ar : doctor.name_fr}
                                 </p>
                                 <div className="flex gap-2">
-                                  <Mail className="h-3 w-3 text-muted-foreground" />
-                                  <Phone className="h-3 w-3 text-muted-foreground" />
+                                  <Mail className="h-3 w-3 text-muted-foreground opacity-50" />
+                                  <Phone className="h-3 w-3 text-muted-foreground opacity-50" />
                                 </div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="font-normal text-muted-foreground">
+                            <Badge variant="outline" className="font-medium bg-background text-muted-foreground border-muted rounded-lg px-3">
                               {doctor.specialization}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-bold text-lg">{doctor.patientCount}</span>
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Users className="h-4 w-4 text-primary" />
+                              </div>
+                              <span className="font-black text-lg">{doctor.patientCount}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-2">
-                              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:bg-primary/10" title={t('admin.view')}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 text-accent hover:bg-accent/10" title={t('admin.edit')}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-accent hover:bg-accent/10 rounded-lg"
+                                title={t('admin.edit')}
+                                onClick={() => handleAction(doctor, 'edit', 'doctor')}
+                              >
                                 <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-destructive hover:bg-destructive/10 rounded-lg"
+                                title={t('admin.deactivate')}
+                                onClick={() => handleAction(doctor, 'delete', 'doctor')}
+                              >
+                                <Ban className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -322,6 +427,164 @@ const UserManagementPage: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Dialog for Edit */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl rounded-2xl p-0 overflow-hidden border-none card-shadow">
+            <div className={cn(
+              "h-24 flex items-end p-6",
+              userType === 'patient' ? "bg-primary/20" : "bg-accent/20"
+            )}>
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl card-shadow bg-background",
+                  userType === 'patient' ? "text-primary" : "text-accent"
+                )}>
+                  {userType === 'patient' ? '👶' : '👨‍⚕️'}
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black">
+                    {language === 'ar' ? 'تعديل البيانات' : 'Modifier les données'}
+                  </DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-medium">
+                    {language === 'ar'
+                      ? (userType === 'patient' ? 'ملف المريض' : 'ملف الطبيب')
+                      : (userType === 'patient' ? 'Profil Patient' : 'Profil Médecin')
+                    }
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {language === 'ar' ? 'الاسم (بالفرنسية)' : 'Nom (Français)'}
+                  </Label>
+                  <Input
+                    value={formData?.name_fr || ''}
+                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                    className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold"
+                  />
+                </div>
+                <div className="space-y-2" dir="rtl">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground w-full block text-right">
+                    {language === 'ar' ? 'الاسم (بالعربية)' : 'Nom (Arabe)'}
+                  </Label>
+                  <Input
+                    value={formData?.name_ar || ''}
+                    onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                    className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-bold text-right"
+                  />
+                </div>
+
+                {userType === 'patient' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {language === 'ar' ? 'العمر' : 'Âge'}
+                      </Label>
+                      <Input
+                        type="number"
+                        value={formData?.age || ''}
+                        onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                        className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {language === 'ar' ? 'نوع الغسيل' : 'Type de dialyse'}
+                      </Label>
+                      <Select
+                        value={formData?.dialysis_type}
+                        onValueChange={(val: any) => setFormData({ ...formData, dialysis_type: val })}
+                      >
+                        <SelectTrigger className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="HD">Hémodialyse (HD)</SelectItem>
+                          <SelectItem value="PD">Dialyse péritonéale (PD)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {language === 'ar' ? 'الحالة' : 'Statut'}
+                      </Label>
+                      <Select
+                        value={formData?.status}
+                        onValueChange={(val: any) => setFormData({ ...formData, status: val })}
+                      >
+                        <SelectTrigger className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="active">{language === 'ar' ? 'نشط' : 'Actif'}</SelectItem>
+                          <SelectItem value="recovering">{language === 'ar' ? 'تعافي' : 'Récupération'}</SelectItem>
+                          <SelectItem value="critical">{language === 'ar' ? 'حرج' : 'Critique'}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {language === 'ar' ? 'الطبيب المعين' : 'Médecin assigné'}
+                      </Label>
+                      <Select
+                        value={formData?.assigned_doctor_id || "none"}
+                        onValueChange={(val) => setFormData({ ...formData, assigned_doctor_id: val === "none" ? null : val })}
+                      >
+                        <SelectTrigger className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="none">{language === 'ar' ? 'لا يوجد' : 'Aucun'}</SelectItem>
+                          {doctors.map(doc => (
+                            <SelectItem key={doc.id} value={doc.id}>
+                              {language === 'ar' ? doc.name_ar : doc.name_fr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {userType === 'doctor' && (
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {language === 'ar' ? 'التخصص' : 'Spécialisation'}
+                    </Label>
+                    <Input
+                      value={formData?.specialization || ''}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                      className="rounded-xl border-muted bg-muted/20 focus:ring-primary h-12 font-semibold"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 bg-muted/30 border-t border-muted/20 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                className="rounded-xl h-12 px-8 font-bold border-muted"
+              >
+                <X className="mr-2 h-4 w-4" />
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="rounded-xl h-12 px-8 font-extrabold bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {language === 'ar' ? 'حفظ' : 'Enregistrer'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
