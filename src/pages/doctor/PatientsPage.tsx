@@ -163,11 +163,7 @@ const PatientsPage: React.FC = () => {
                     <TableRow key={patient.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                            <span className="font-semibold text-secondary-foreground">
-                              {(language === 'ar' ? patient.name_ar : patient.name_fr).charAt(0)}
-                            </span>
-                          </div>
+                          
                           <div>
                             <p className="font-medium text-foreground">
                               {language === 'ar' ? patient.name_ar : patient.name_fr}

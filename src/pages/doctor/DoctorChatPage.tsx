@@ -284,9 +284,8 @@ const DoctorChatPage: React.FC = () => {
                       <p className="font-semibold text-foreground">
                         {language === 'ar' ? selectedPatient.name_ar : selectedPatient.name_fr}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="w-2 h-2 bg-success rounded-full" />
-                        {language === 'ar' ? 'متصل' : 'En ligne'}
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <StatusBadge status={selectedPatient.status} />
                       </div>
                     </div>
                   </div>
@@ -301,15 +300,7 @@ const DoctorChatPage: React.FC = () => {
                 </div>
 
                 {/* Patient Quick Info */}
-                <div className="p-3 bg-muted/50 border-b border-border flex items-center gap-4 text-sm flex-shrink-0">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {language === 'ar' ? 'آخر جلسة:' : 'Dernière séance:'} {selectedPatient.last_session || '-'}
-                    </span>
-                  </div>
-                  <StatusBadge status={selectedPatient.status} />
-                </div>
+                
 
                 {/* Messages - Only scrollable area */}
                 <ScrollArea className="flex-1 overflow-hidden">
@@ -322,10 +313,7 @@ const DoctorChatPage: React.FC = () => {
                           msg.sender === 'doctor' && (isRTL ? 'flex-row-reverse' : 'flex-row-reverse'),
                           msg.sender === 'patient' && (isRTL ? 'flex-row' : 'flex-row')
                         )}
-                      // Note: Fixed alignment logic. Doctor (me) should always be on "End" (Right in LTR, Left in RTL usually, or just Right for 'me')
-                      // Let's simplify: Me (doctor) -> Right. Them (Patient) -> Left.
-                      // Tailwind 'flex-row-reverse' puts items in reverse order.
-                      // Actually better to just use justification.
+                      
                       >
                         <div className={cn(
                           'flex gap-3 w-full',

@@ -4,12 +4,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { FileText, Heart, AlertCircle, Calendar, Clock } from 'lucide-react';
+import {
+  FileText,
+  Heart,
+  Calendar,
+  Clock,
+  Droplet,
+  Activity,
+  ChevronRight,
+  ChevronLeft,
+  User,
+  Users,
+  Search,
+  Thermometer,
+  CloudLightning,
+  Activity as ActivityIcon
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import StatusBadge from '@/components/StatusBadge';
 import { supabase } from '@/lib/supabase';
 
@@ -44,7 +59,6 @@ const DoctorHealthFormsPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [doctorId, setDoctorId] = useState<string | null>(null);
 
   // Fetch doctor ID and patients
   useEffect(() => {
@@ -58,8 +72,6 @@ const DoctorHealthFormsPage: React.FC = () => {
           .single();
 
         if (doctorData) {
-          setDoctorId(doctorData.id);
-
           const { data: patientsData } = await supabase
             .from('patients')
             .select('*')
@@ -104,25 +116,15 @@ const DoctorHealthFormsPage: React.FC = () => {
     fetchHealthForms();
   }, [selectedPatientId]);
 
-  const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p.id === patientId);
-    if (!patient) return 'Unknown';
-    return language === 'ar' ? patient.name_ar : patient.name_fr;
-  };
-
-  const getPatientStatus = (patientId: string) => {
-    return patients.find(p => p.id === patientId)?.status || 'active';
-  };
-
   const getMoodEmoji = (mood: number) => {
-    const moodMap: { [key: number]: string } = {
-      1: '😞',
-      2: '😟',
-      3: '😐',
-      4: '🙂',
-      5: '😄',
-    };
-    return moodMap[mood] || '😐';
+    const moods = [
+      { emoji: '😞', label: { ar: 'حزين جداً', fr: 'Très triste' } },
+      { emoji: '😟', label: { ar: 'حزين', fr: 'Triste' } },
+      { emoji: '😐', label: { ar: 'متعادل', fr: 'Neutre' } },
+      { emoji: '🙂', label: { ar: 'سعيد', fr: 'Joyeux' } },
+      { emoji: '😄', label: { ar: 'سعيد جداً', fr: 'Très joyeux' } },
+    ];
+    return moods[mood - 1] || moods[2];
   };
 
   const getSymptomLabel = (symptom: string) => {
@@ -137,258 +139,374 @@ const DoctorHealthFormsPage: React.FC = () => {
     return symptomMap[symptom]?.[language] || symptom;
   };
 
+  const [patientSearch, setPatientSearch] = useState('');
   const currentPatient = patients.find(p => p.id === selectedPatientId);
+  const filteredPatientsList = patients.filter(p =>
+    (language === 'ar' ? p.name_ar : p.name_fr).toLowerCase().includes(patientSearch.toLowerCase())
+  );
 
   return (
     <DashboardLayout role="doctor">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">
-            {language === 'ar' ? 'نماذج الصحة' : 'Formulaires de santé'}
-          </h1>
+      <div className="max-w-6xl mx-auto space-y-6 pb-20 lg:pb-0">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {language === 'ar' ? 'نماذج الصحة' : 'Formulaires de santé'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'متابعة الحالة اليومية لمرضاك' : 'Suivi de l\'état quotidien de vos patients'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Patients List */}
-          <Card className="lg:col-span-1 h-fit">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {language === 'ar' ? 'مرضاي' : 'Mes patients'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96">
-                <div className="space-y-2">
-                  {patients.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      {language === 'ar' ? 'لا يوجد مرضى' : 'Aucun patient'}
-                    </p>
+        {/* Mobile Patient Selection */}
+        <div className="lg:hidden -mx-6 px-6 overflow-hidden">
+          <ScrollArea className="w-full">
+            <div className="flex gap-3 pb-4">
+              {patients.map((patient) => (
+                <button
+                  key={patient.id}
+                  onClick={() => setSelectedPatientId(patient.id)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-3 rounded-2xl transition-all flex-shrink-0 border-2',
+                    selectedPatientId === patient.id
+                      ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
+                      : 'bg-card border-transparent text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className={cn(
+                      "font-bold text-xs",
+                      selectedPatientId === patient.id ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                    )}>
+                      {(language === 'ar' ? patient.name_ar : patient.name_fr).charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-bold text-sm whitespace-nowrap">
+                    {language === 'ar' ? patient.name_ar : patient.name_fr}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden" />
+          </ScrollArea>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          {/* Desktop Patient Sidebar Refined */}
+          <aside className="hidden lg:flex flex-col gap-4 lg:col-span-1 sticky top-6 max-h-[calc(100vh-6rem)]">
+            <Card className="border-none shadow-xl shadow-primary/5 rounded-[2rem] overflow-hidden flex flex-col flex-1">
+              <div className="p-5 bg-muted/30 border-b border-muted/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <span className="font-black text-sm uppercase tracking-wider text-primary">
+                      {language === 'ar' ? 'مرضاي' : 'Mes patients'}
+                    </span>
+                  </div>
+                  <Badge className="bg-primary text-primary-foreground rounded-lg px-2 h-6 font-black">
+                    {patients.length}
+                  </Badge>
+                </div>
+
+                <div className="relative group">
+                  <Search className={cn(
+                    "absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary",
+                    isRTL ? "right-3" : "left-3"
+                  )} />
+                  <Input
+                    placeholder={language === 'ar' ? 'بحث...' : 'Chercher...'}
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    className={cn(
+                      "h-10 bg-background border-muted hover:border-primary/30 transition-all rounded-xl text-sm",
+                      isRTL ? "pr-9 pl-3" : "pl-9 pr-3"
+                    )}
+                  />
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <div className="p-3 space-y-1.5">
+                  {filteredPatientsList.length === 0 ? (
+                    <div className="py-12 text-center space-y-2 opacity-40 italic">
+                      <Search className="h-8 w-8 mx-auto" />
+                      <p className="text-xs">{language === 'ar' ? 'لا توجد نتائج' : 'Aucun résultat'}</p>
+                    </div>
                   ) : (
-                    patients.map((patient) => (
+                    filteredPatientsList.map((patient) => (
                       <button
                         key={patient.id}
                         onClick={() => setSelectedPatientId(patient.id)}
                         className={cn(
-                          'w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left',
+                          'w-full flex items-center gap-3 p-3 rounded-2xl transition-all relative overflow-hidden group',
                           selectedPatientId === patient.id
-                            ? 'bg-primary/10 border border-primary/20'
-                            : 'hover:bg-muted'
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]'
+                            : 'hover:bg-primary/5 text-foreground bg-transparent border border-transparent'
                         )}
                       >
-                        <Avatar className="w-10 h-10 flex-shrink-0">
-                          <AvatarFallback className="bg-secondary text-secondary-foreground">
+                        {/* Active Indicator Bar */}
+                        {selectedPatientId === patient.id && (
+                          <div className={cn(
+                            "absolute top-0 bottom-0 w-1 bg-white/40",
+                            isRTL ? "left-0" : "right-0"
+                          )} />
+                        )}
+
+                        <Avatar className={cn(
+                          "w-10 h-10 border-2 shadow-sm transition-transform group-hover:scale-105 shrink-0",
+                          selectedPatientId === patient.id ? "border-white/20" : "border-primary/5"
+                        )}>
+                          <AvatarFallback className={cn(
+                            "font-black text-xs",
+                            selectedPatientId === patient.id ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+                          )}>
                             {(language === 'ar' ? patient.name_ar : patient.name_fr).charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
+
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="font-bold text-sm leading-tight">
                             {language === 'ar' ? patient.name_ar : patient.name_fr}
                           </p>
-                          
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={cn(
+                              "w-1.5 h-1.5 rounded-full shrink-0",
+                              patient.status === 'critical' ? 'bg-destructive' :
+                                patient.status === 'recovering' ? 'bg-warning' : 'bg-success',
+                              selectedPatientId === patient.id && "bg-white"
+                            )} />
+                            <span className={cn(
+                              "text-[10px] uppercase font-heavy tracking-widest",
+                              selectedPatientId === patient.id ? "text-white/80" : "text-muted-foreground"
+                            )}>
+                              {patient.status}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     ))
                   )}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
 
-          {/* Health Forms */}
-          <div className="lg:col-span-3 space-y-4">
+              <div className="p-4 bg-muted/10 border-t border-muted/50 text-center">
+                <Button variant="ghost" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary p-0 h-auto">
+                  {language === 'ar' ? 'إدارة جميع المرضى' : 'Gérer tous les patients'}
+                </Button>
+              </div>
+            </Card>
+          </aside>
+
+          {/* Health Forms Detail Section */}
+          <div className="lg:col-span-3 space-y-6">
             {currentPatient && (
-              <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-                          {(language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr).charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-foreground">
+              <Card className="border-none card-shadow bg-primary text-primary-foreground overflow-hidden relative">
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+                <CardContent className="p-8 relative z-10">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                      <div className="relative hidden sm:block">
+                        <Avatar className="w-20 h-20 border-4 border-white/20 shadow-2xl">
+                          <AvatarFallback className="bg-white/10 text-white text-3xl font-black">
+                            {(language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr).charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-4 border-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="text-3xl font-black tracking-tight">
                           {language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr}
-                        </p>
-                       
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                          <Badge variant="secondary" className="bg-white/10 text-white border-white/10 backdrop-blur-md rounded-lg px-4 py-1">
+                            {currentPatient.age} {language === 'ar' ? 'سنة' : 'ans'}
+                          </Badge>
+                          <div className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg border border-white/10">
+                            <StatusBadge status={currentPatient.status} />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <StatusBadge status={currentPatient.status} />
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {loading ? (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  {language === 'ar' ? 'جاري التحميل...' : 'Chargement...'}
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-muted-foreground animate-pulse font-medium">
+                  {language === 'ar' ? 'جاري تحميل البيانات...' : 'Chargement des données...'}
+                </p>
+              </div>
             ) : healthForms.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  {language === 'ar' ? 'لا توجد نماذج صحة' : 'Aucun formulaire de santé'}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {language === 'ar' ? `${healthForms.length} نموذج` : `${healthForms.length} formulaires`}
+              <Card className="border-dashed border-2 bg-muted/20 py-20 text-center">
+                <div className="max-w-xs mx-auto space-y-4">
+                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
+                    <FileText className="h-10 w-10 text-muted-foreground opacity-20" />
+                  </div>
+                  <CardTitle className="text-xl opacity-50">
+                    {language === 'ar' ? 'لا توجد نماذج بعد' : 'Aucun formulaire encore'}
+                  </CardTitle>
+                  <p className="text-muted-foreground text-sm">
+                    {language === 'ar'
+                      ? 'سيظهر التاريخ الصحي للمريض هنا بمجرد إرساله للنماذج'
+                      : 'L\'historique de santé apparaîtra ici dès que le patient l\'envoie.'}
                   </p>
                 </div>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <ActivityIcon className="h-5 w-5 text-primary" />
+                  <h3 className="font-bold text-foreground">
+                    {language === 'ar' ? `تاريخ النماذج (${healthForms.length})` : `Historique des formulaires (${healthForms.length})`}
+                  </h3>
+                </div>
 
-                {healthForms.map((form) => (
-                  <Card key={form.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="pt-6 space-y-4">
-                      {/* Header with Date and Mood */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {new Date(form.created_at).toLocaleDateString(
-                                language === 'ar' ? 'ar-EG' : 'fr-FR',
-                                { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+                {healthForms.map((form) => {
+                  const moodInfo = getMoodEmoji(form.mood);
+                  return (
+                    <Card key={form.id} className="border-none card-shadow group transition-all hover:translate-y-[-1px]">
+                      <CardContent className="p-0">
+                        {/* Summary Header */}
+                        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-muted/30">
+                          <div className="flex items-center gap-4">
+                            <div className="text-5xl bg-secondary/30 w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner">
+                              {moodInfo.emoji}
+                            </div>
+                            <div>
+                              <span className="font-black text-xl text-foreground block">
+                                {moodInfo.label[language]}
+                              </span>
+                              <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground font-medium">
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="h-4 w-4" />
+                                  {new Date(form.created_at).toLocaleDateString(
+                                    language === 'ar' ? 'ar-EG' : 'fr-FR',
+                                    { day: 'numeric', month: 'short', year: 'numeric' }
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-4 w-4" />
+                                  {new Date(form.created_at).toLocaleTimeString(
+                                    language === 'ar' ? 'ar-EG' : 'fr-FR',
+                                    { hour: '2-digit', minute: '2-digit' }
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Details Content */}
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {/* Left Side: Symptoms */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-black text-muted-foreground uppercase tracking-[0.15em]">
+                              <Thermometer className="h-4 w-4 text-primary" />
+                              {language === 'ar' ? 'الأعراض والعلامات' : 'Symptômes & Signes'}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {form.symptoms && form.symptoms.length > 0 ? (
+                                form.symptoms.map((symptom, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    className="bg-primary/5 text-primary border-primary/10 hover:bg-primary/10 rounded-xl py-1.5 px-4 font-bold"
+                                  >
+                                    {getSymptomLabel(symptom)}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic">
+                                  {language === 'ar' ? 'لا توجد أعراض مبلغ عنها' : 'Aucun symptôme signalé'}
+                                </p>
                               )}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(form.created_at).toLocaleTimeString(
-                                language === 'ar' ? 'ar-EG' : 'fr-FR',
-                                { hour: '2-digit', minute: '2-digit' }
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-4xl">{getMoodEmoji(form.mood)}</div>
-                      </div>
-
-                      {/* Mood and Pain Level */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">
-                            {language === 'ar' ? 'المزاج' : 'Humeur'}
-                          </p>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <div
-                                key={i}
-                                className={cn(
-                                  'h-2 flex-1 rounded-full transition-colors',
-                                  i <= form.mood ? 'bg-primary' : 'bg-muted'
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Heart className="h-4 w-4 text-destructive" />
-                            <p className="text-sm font-medium text-muted-foreground">
-                              {language === 'ar' ? 'مستوى الألم' : 'Niveau de douleur'}
-                            </p>
-                          </div>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <div
-                                key={i}
-                                className={cn(
-                                  'h-2 flex-1 rounded-full transition-colors',
-                                  i <= form.pain_level ? 'bg-destructive' : 'bg-muted'
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Symptoms */}
-                      {form.symptoms && form.symptoms.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-2">
-                            {language === 'ar' ? 'الأعراض' : 'Symptômes'}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {form.symptoms.map((symptom, idx) => (
-                              <Badge key={idx} variant="outline">
-                                {getSymptomLabel(symptom)}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Session Info */}
-                      {(form.session_date || form.session_duration) && (
-                        <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
-                          {form.session_date && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'ar' ? 'تاريخ الجلسة' : 'Date de la séance'}
-                              </p>
-                              <p className="text-sm font-medium text-foreground">
-                                {new Date(form.session_date).toLocaleDateString(
-                                  language === 'ar' ? 'ar-EG' : 'fr-FR'
-                                )}
-                              </p>
                             </div>
-                          )}
-                          {form.session_duration && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'ar' ? 'المدة' : 'Durée'}
-                              </p>
-                              <p className="text-sm font-medium text-foreground">
-                                {form.session_duration} {language === 'ar' ? 'دقيقة' : 'min'}
-                              </p>
+                          </div>
+
+                          {/* Right Side: Medical Specs & Pain Level */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-black text-muted-foreground uppercase tracking-[0.15em]">
+                              <Activity className="h-4 w-4 text-primary" />
+                              {language === 'ar' ? 'البيانات الطبية' : 'Données Médicales'}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              {/* Pain Level Box */}
+                              <div className="bg-destructive/5 p-4 rounded-3xl border border-destructive/10 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-125 transition-transform">
+                                  <Heart className="h-8 w-8 text-destructive fill-destructive" />
+                                </div>
+                                <p className="text-[10px] uppercase font-black text-destructive/70 tracking-widest mb-1 relative z-10">
+                                  {language === 'ar' ? 'مستوى الألم' : 'Douleur'}
+                                </p>
+                                <div className="flex items-baseline gap-1 relative z-10">
+                                  <span className="font-black text-2xl text-destructive">{form.pain_level}</span>
+                                  <span className="text-xs font-bold text-destructive/50">/ 5</span>
+                                </div>
+                              </div>
+
+                              {/* Duration Box */}
+                              <div className="bg-muted/30 p-4 rounded-3xl border border-muted/10">
+                                <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1">
+                                  {language === 'ar' ? 'المدة' : 'Durée'}
+                                </p>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="font-black text-2xl text-foreground">{form.session_duration || '-'}</span>
+                                  <span className="text-xs font-bold text-muted-foreground">min</span>
+                                </div>
+                              </div>
+
+                              {/* Fluids Box */}
+                              <div className="bg-primary/5 p-4 rounded-3xl border border-primary/10 col-span-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-black text-primary/70 tracking-widest">
+                                      {language === 'ar' ? 'الكميات (مل)' : 'Quantités (ml)'}
+                                    </p>
+                                    <div className="flex items-center gap-6">
+                                      <div className="flex flex-col">
+                                        <span className="text-[9px] text-muted-foreground uppercase font-bold">{language === 'ar' ? 'مغذي' : 'Infusion'}</span>
+                                        <span className="font-black text-lg text-foreground">{form.infused_quantity || '0'}</span>
+                                      </div>
+                                      <div className="h-8 w-px bg-primary/10" />
+                                      <div className="flex flex-col">
+                                        <span className="text-[9px] text-muted-foreground uppercase font-bold">{language === 'ar' ? 'مستخلص' : 'Drainage'}</span>
+                                        <span className="font-black text-lg text-foreground">{form.drained_quantity || '0'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Droplet className="h-8 w-8 text-primary opacity-20" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Notes Section - Full Width */}
+                          {form.notes && (
+                            <div className="md:col-span-2 space-y-3 pt-2">
+                              <div className="flex items-center gap-2 text-sm font-bold text-foreground uppercase tracking-wider">
+                                <CloudLightning className="h-4 w-4 text-warning" />
+                                {language === 'ar' ? 'ملاحظات إضافية' : 'Notes additionnelles'}
+                              </div>
+                              <div className="p-4 bg-muted/20 rounded-2xl border-l-4 border-warning italic text-foreground text-sm leading-relaxed">
+                                "{form.notes}"
+                              </div>
                             </div>
                           )}
                         </div>
-                      )}
-
-                      {/* Quantities */}
-                      {(form.infused_quantity || form.drained_quantity) && (
-                        <div className="grid grid-cols-2 gap-4">
-                          {form.infused_quantity && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'ar' ? 'الكمية المالية' : 'Quantité infusée'}
-                              </p>
-                              <p className="text-sm font-medium text-foreground">
-                                {form.infused_quantity}
-                              </p>
-                            </div>
-                          )}
-                          {form.drained_quantity && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'ar' ? 'الكمية المستنزفة' : 'Quantité drainée'}
-                              </p>
-                              <p className="text-sm font-medium text-foreground">
-                                {form.drained_quantity}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Notes */}
-                      {form.notes && (
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-2">
-                            {language === 'ar' ? 'ملاحظات' : 'Notes'}
-                          </p>
-                          <p className="text-sm text-foreground bg-muted/50 p-3 rounded-lg">
-                            {form.notes}
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>

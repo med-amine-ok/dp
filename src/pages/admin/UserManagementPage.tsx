@@ -281,9 +281,7 @@ const UserManagementPage: React.FC = () => {
                           <TableRow key={patient.id} className="hover:bg-muted/10 transition-colors border-muted/20">
                             <TableCell className="py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-lg">
-                                  {(language === 'ar' ? patient.name_ar : patient.name_fr)?.charAt(0) || 'P'}
-                                </div>
+                               
                                 <div>
                                   <p className="font-bold text-foreground">
                                     {language === 'ar' ? patient.name_ar : patient.name_fr}

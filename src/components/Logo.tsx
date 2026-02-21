@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface LogoProps {
     className?: string;
@@ -26,10 +27,15 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
 
     return (
         <div className={`flex items-center gap-2 font-black tracking-tight text-primary ${className}`}>
-            <div className={`relative flex items-center justify-center text-white bg-primary rounded-full font-bold ${iconClasses[size]}`}>
-                <span className={size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-xl' : 'text-base'}>DP</span>
-            </div>
-            <span className={textClasses[size]}>DP Kid</span>
+            <img
+                src="/logo1.png"
+                alt="DP Kid Logo"
+                className={cn(
+                    "object-contain",
+                    size === 'sm' ? 'h-8' : size === 'lg' ? 'h-18' : 'h-12'
+                )}
+            />
+           
         </div>
     );
 };
