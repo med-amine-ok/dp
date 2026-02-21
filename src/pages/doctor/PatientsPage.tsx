@@ -174,9 +174,7 @@ const PatientsPage: React.FC = () => {
                       <TableCell>
                         <StatusBadge status={patient.status} />
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">{patient.last_session || '-'}</span>
-                      </TableCell>
+                      
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
                           <Button 
