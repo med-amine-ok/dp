@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, RotateCcw, Star, Shuffle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Shuffle } from 'lucide-react';
 
 interface PuzzlePiece {
   id: number;
@@ -132,155 +131,119 @@ const PuzzleGardenGame: React.FC<PuzzleGardenGameProps> = ({ onBack }) => {
 
   if (gameComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-playful-green/10 via-background to-playful-yellow/10 p-4 md:p-8 flex items-center justify-center">
-        <Card className="max-w-md mx-auto animate-scale-in bg-gradient-to-br from-playful-green/10 to-playful-yellow/10">
-          <CardContent className="p-8 text-center">
-            <div className="text-6xl mb-4 animate-bounce-gentle">🧩</div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              {texts.congratulations}
-            </h2>
-            <p className="text-muted-foreground mb-4">{texts.puzzleComplete}</p>
-            
-            <div className="flex justify-center gap-1 mb-4">
-              {[...Array(3)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    'h-10 w-10 transition-all',
-                    i < getStars()
-                      ? 'text-playful-yellow fill-playful-yellow animate-pulse-soft'
-                      : 'text-muted-foreground/30'
-                  )}
-                />
-              ))}
-            </div>
-
-            <p className="text-muted-foreground mb-6">
-              {texts.moves}: {moves}
-            </p>
-
-            <div className="flex gap-3 justify-center">
-              <Button onClick={initializeGame} className="gap-2">
-                <RotateCcw className="h-4 w-4" />
-                {texts.restart}
-              </Button>
-              <Button variant="outline" onClick={onBack}>
-                {texts.back}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-yellow-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white rounded-3xl border-4 border-emerald-300 shadow-2xl p-8 text-center">
+          <div className="text-7xl mb-4 animate-bounce-gentle">🧩</div>
+          <h2 className="text-3xl font-extrabold text-slate-800 mb-1">{texts.congratulations}</h2>
+          <p className="text-slate-500 font-semibold mb-4">{texts.puzzleComplete}</p>
+          <div className="flex justify-center gap-2 mb-4">
+            {[...Array(3)].map((_, i) => (
+              <span key={i} className={cn('text-4xl', i < getStars() ? 'opacity-100' : 'opacity-20 grayscale')}>⭐</span>
+            ))}
+          </div>
+          <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 mb-5">
+            <p className="text-slate-600 font-semibold">{texts.moves}: <span className="font-extrabold text-emerald-600">{moves}</span></p>
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={initializeGame} className="flex-1 rounded-2xl gap-2 font-bold bg-emerald-500 hover:bg-emerald-600">
+              <RotateCcw className="h-4 w-4" /> {texts.restart}
+            </Button>
+            <Button variant="outline" onClick={onBack} className="flex-1 rounded-2xl font-bold border-2">{texts.back}</Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-playful-green/10 via-background to-playful-yellow/10 p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-2xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {texts.back}
-          </Button>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={initializeGame}
-              className="gap-2"
-            >
-              <Shuffle className="h-4 w-4" />
-              {texts.shuffle}
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-yellow-50 p-4 md:p-6">
+      {/* ── Header ── */}
+      <div className="max-w-lg mx-auto mb-5">
+        <div className="flex items-center justify-between mb-5">
+          <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors">
+            <ArrowLeft className="h-4 w-4" /> {texts.back}
+          </button>
+          <button onClick={initializeGame} className="flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-100 hover:bg-emerald-200 px-4 py-2 rounded-full transition-all">
+            <Shuffle className="h-4 w-4" /> {texts.shuffle}
+          </button>
         </div>
 
-        <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-            🧩 {texts.title}
-          </h1>
-          <p className="text-muted-foreground text-sm">{texts.hint}</p>
+        <div className="text-center mb-3">
+          <div className="text-5xl mb-1">🧩</div>
+          <h1 className="text-3xl font-extrabold text-slate-800">{texts.title}</h1>
+          <p className="text-sm font-semibold text-slate-400 mt-1">{texts.hint}</p>
         </div>
 
-        {/* Difficulty Selector */}
-        <div className="flex justify-center gap-2 mb-4">
+        {/* Difficulty pills */}
+        <div className="flex justify-center gap-2 mb-3">
           {(['easy', 'medium', 'hard'] as const).map((d) => (
-            <Button
+            <button
               key={d}
-              variant={difficulty === d ? 'default' : 'outline'}
-              size="sm"
               onClick={() => setDifficulty(d)}
+              className={cn(
+                'px-4 py-2 rounded-full font-extrabold text-sm border-2 transition-all',
+                difficulty === d
+                  ? 'bg-emerald-500 border-emerald-500 text-white shadow-md scale-105'
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300'
+              )}
             >
-              {d === 'easy' ? texts.easy : d === 'medium' ? texts.medium : texts.hard}
-            </Button>
+              {d === 'easy' ? `🟢 ${texts.easy}` : d === 'medium' ? `🟡 ${texts.medium}` : `🔴 ${texts.hard}`}
+            </button>
           ))}
         </div>
 
-        {/* Moves Counter */}
-        <div className="text-center mb-4">
-          <span className="text-lg font-medium text-muted-foreground">
-            {texts.moves}: <span className="text-foreground font-bold">{moves}</span>
-          </span>
+        {/* Moves */}
+        <div className="flex justify-center">
+          <div className="bg-white border-2 border-emerald-200 rounded-2xl px-5 py-2 shadow-sm">
+            <span className="font-extrabold text-slate-600">✏️ {texts.moves}: </span>
+            <span className="font-extrabold text-emerald-600 text-lg">{moves}</span>
+          </div>
         </div>
       </div>
 
-      {/* Puzzle Grid */}
-      <div className="max-w-md mx-auto">
-        <Card className="card-shadow">
-          <CardContent className="p-4">
-            <div 
-              className="grid gap-2"
-              style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
-            >
-              {Array.from({ length: totalPieces }).map((_, position) => {
-                const piece = getPieceByPosition(position);
-                if (!piece) return null;
+      {/* ── Puzzle Grid ── */}
+      <div className="max-w-sm mx-auto">
+        <div className="bg-white rounded-3xl border-4 border-emerald-200 shadow-lg p-4">
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
+            {Array.from({ length: totalPieces }).map((_, position) => {
+              const piece = getPieceByPosition(position);
+              if (!piece) return null;
+              const isCorrect = piece.currentPos === piece.correctPos;
+              const isSelected = selectedPiece === piece.id;
+              return (
+                <button
+                  key={position}
+                  onClick={() => handlePieceClick(piece.id)}
+                  className={cn(
+                    'aspect-square rounded-2xl flex items-center justify-center transition-all duration-200 border-4 shadow-sm relative',
+                    isSelected
+                      ? 'bg-gradient-to-br from-violet-400 to-pink-400 border-violet-500 scale-110 shadow-xl ring-4 ring-violet-300 ring-offset-1'
+                      : isCorrect
+                        ? 'bg-gradient-to-br from-emerald-100 to-green-100 border-emerald-300'
+                        : 'bg-white border-slate-200 hover:border-emerald-300 hover:scale-105 active:scale-95',
+                    difficulty === 'easy' && 'text-4xl',
+                    difficulty === 'medium' && 'text-3xl',
+                    difficulty === 'hard' && 'text-2xl'
+                  )}
+                >
+                  {getPieceEmoji(piece.id)}
+                  {isCorrect && !isSelected && (
+                    <span className="absolute top-0.5 right-0.5 text-xs">✅</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                const isCorrect = piece.currentPos === piece.correctPos;
-                const isSelected = selectedPiece === piece.id;
-
-                return (
-                  <button
-                    key={position}
-                    onClick={() => handlePieceClick(piece.id)}
-                    className={cn(
-                      'aspect-square rounded-xl text-3xl flex items-center justify-center transition-all duration-200',
-                      'bg-gradient-to-br shadow-md hover:shadow-lg',
-                      isSelected 
-                        ? 'from-playful-purple to-playful-pink scale-105 ring-4 ring-playful-purple'
-                        : isCorrect
-                          ? 'from-playful-green/30 to-playful-green/10'
-                          : 'from-white to-gray-50 hover:scale-102',
-                      difficulty === 'easy' && 'text-4xl',
-                      difficulty === 'medium' && 'text-3xl',
-                      difficulty === 'hard' && 'text-2xl'
-                    )}
-                  >
-                    {getPieceEmoji(piece.id)}
-                    <span className="absolute bottom-1 right-1 text-xs text-muted-foreground opacity-50">
-                      {piece.id + 1}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Target Pattern (Small Preview) */}
-        <div className="mt-4 text-center">
-          <p className="text-sm text-muted-foreground mb-2">
-            {language === 'ar' ? 'الترتيب الصحيح:' : 'Ordre correct :'}
+        {/* Target preview */}
+        <div className="mt-4 bg-white rounded-2xl border-2 border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-xs font-extrabold text-slate-400 mb-2">
+            {language === 'ar' ? '🎯 الترتيب الصحيح:' : '🎯 Ordre correct :'}
           </p>
           <div className="flex justify-center gap-1 flex-wrap">
             {Array.from({ length: totalPieces }).map((_, i) => (
-              <span key={i} className="text-lg">
-                {getPieceEmoji(i)}
-              </span>
+              <span key={i} className={cn(difficulty === 'hard' ? 'text-lg' : 'text-xl')}>{getPieceEmoji(i)}</span>
             ))}
           </div>
         </div>

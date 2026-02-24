@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, RotateCcw, Trophy, Star, Clock, Sparkles } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 
 interface MemoryCard {
   id: number;
@@ -144,53 +142,54 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-playful-orange/10 via-background to-playful-yellow/10 p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-2xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-orange-50 p-4 md:p-6">
+      {/* ── Header ── */}
+      <div className="max-w-lg mx-auto mb-5">
+        <div className="flex items-center justify-between mb-5">
+          <button
             onClick={onBack}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             {texts.back}
-          </Button>
-          <Button
-            variant="outline"
+          </button>
+          <button
             onClick={initializeGame}
-            className="gap-2"
+            className="flex items-center gap-2 text-sm font-bold text-violet-600 hover:text-violet-800 bg-violet-100 hover:bg-violet-200 px-4 py-2 rounded-full transition-all"
           >
             <RotateCcw className="h-4 w-4" />
             {texts.restart}
-          </Button>
+          </button>
         </div>
 
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-            🎴 {texts.title}
-          </h1>
+        {/* Title */}
+        <div className="text-center mb-5">
+          <div className="text-5xl mb-2">🎴</div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">{texts.title}</h1>
         </div>
 
-        {/* Stats */}
-        <div className="flex justify-center gap-4 mb-6">
-          <Badge variant="secondary" className="px-4 py-2 text-lg gap-2">
-            <Sparkles className="h-4 w-4 text-playful-purple" />
-            {texts.moves}: {moves}
-          </Badge>
-          <Badge variant="secondary" className="px-4 py-2 text-lg gap-2">
-            <Star className="h-4 w-4 text-playful-yellow" />
-            {texts.matches}: {matches}/{CARD_EMOJIS.length}
-          </Badge>
-          <Badge variant="secondary" className="px-4 py-2 text-lg gap-2">
-            <Clock className="h-4 w-4 text-playful-green" />
-            {formatTime(timer)}
-          </Badge>
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3 mb-2">
+          <div className="bg-white rounded-2xl border-2 border-violet-200 shadow-sm p-3 text-center">
+            <div className="text-xl mb-0.5">✨</div>
+            <div className="font-extrabold text-violet-600 text-xl">{moves}</div>
+            <div className="text-xs font-semibold text-slate-400">{texts.moves}</div>
+          </div>
+          <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-sm p-3 text-center">
+            <div className="text-xl mb-0.5">⭐</div>
+            <div className="font-extrabold text-amber-500 text-xl">{matches}<span className="text-base text-slate-400">/{CARD_EMOJIS.length}</span></div>
+            <div className="text-xs font-semibold text-slate-400">{texts.matches}</div>
+          </div>
+          <div className="bg-white rounded-2xl border-2 border-emerald-200 shadow-sm p-3 text-center">
+            <div className="text-xl mb-0.5">⏱️</div>
+            <div className="font-extrabold text-emerald-600 text-xl">{formatTime(timer)}</div>
+            <div className="text-xs font-semibold text-slate-400">{texts.time}</div>
+          </div>
         </div>
       </div>
 
-      {/* Game Board */}
-      <div className="max-w-md mx-auto">
+      {/* ── Game Board ── */}
+      <div className="max-w-lg mx-auto">
         <div className="grid grid-cols-4 gap-3">
           {cards.map((card) => (
             <button
@@ -198,72 +197,70 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack }) => {
               onClick={() => handleCardClick(card.id)}
               disabled={card.isFlipped || card.isMatched || flippedCards.length >= 2}
               className={cn(
-                'aspect-square rounded-xl text-4xl flex items-center justify-center transition-all duration-300 transform',
-                'shadow-lg hover:shadow-xl',
-                card.isFlipped || card.isMatched
-                  ? 'bg-white rotate-0 scale-100'
-                  : 'bg-gradient-to-br from-playful-purple to-playful-pink hover:scale-105 cursor-pointer',
-                card.isMatched && 'ring-4 ring-playful-green animate-celebration'
+                'aspect-square rounded-2xl text-4xl flex items-center justify-center',
+                'transition-all duration-300 border-4 shadow-md select-none',
+                !card.isFlipped && !card.isMatched && [
+                  'bg-gradient-to-br from-violet-500 to-pink-500 border-violet-400',
+                  'hover:scale-105 hover:shadow-xl hover:from-violet-400 hover:to-pink-400 cursor-pointer active:scale-95',
+                ],
+                (card.isFlipped || card.isMatched) && 'bg-white border-slate-200 scale-100',
+                card.isMatched && 'bg-gradient-to-br from-emerald-50 to-green-100 border-emerald-400 ring-4 ring-emerald-300 ring-offset-2',
               )}
-              style={{
-                transformStyle: 'preserve-3d',
-              }}
             >
               {card.isFlipped || card.isMatched ? (
-                <span className="animate-scale-in">{card.emoji}</span>
+                <span className={cn('transition-all duration-300', card.isMatched && 'animate-bounce-gentle')}>{card.emoji}</span>
               ) : (
-                <span className="text-white text-2xl">?</span>
+                <span className="text-white/80 text-3xl font-black">?</span>
               )}
             </button>
           ))}
         </div>
+
+        {/* Progress dots */}
+        <div className="flex justify-center gap-2 mt-5">
+          {Array.from({ length: CARD_EMOJIS.length }).map((_, i) => (
+            <div key={i} className={cn('w-2.5 h-2.5 rounded-full transition-all duration-300', i < matches ? 'bg-emerald-400 scale-125' : 'bg-slate-200')} />
+          ))}
+        </div>
       </div>
 
-      {/* Win Celebration Modal */}
+      {/* ── Win Celebration Modal ── */}
       {showCelebration && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <Card className="max-w-sm mx-4 animate-scale-in bg-gradient-to-br from-playful-yellow/20 to-playful-orange/20">
-            <CardContent className="p-8 text-center">
-              <div className="text-6xl mb-4 animate-bounce-gentle">🏆</div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                {texts.congratulations}
-              </h2>
-              <p className="text-muted-foreground mb-4">{texts.youWon}</p>
-              
-              <div className="flex justify-center gap-1 mb-4">
-                {[...Array(3)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      'h-8 w-8 transition-all',
-                      i < getStars()
-                        ? 'text-playful-yellow fill-playful-yellow animate-pulse-soft'
-                        : 'text-muted-foreground/30'
-                    )}
-                  />
-                ))}
-              </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl border-4 border-amber-300 shadow-2xl p-8 text-center">
+            <div className="text-7xl mb-3 animate-bounce-gentle">🏆</div>
+            <h2 className="text-3xl font-extrabold text-slate-800 mb-1">{texts.congratulations}</h2>
+            <p className="text-slate-500 font-semibold mb-4">{texts.youWon}</p>
 
-              <div className="space-y-2 mb-6">
-                <p className="text-foreground">
-                  {texts.moves}: <span className="font-bold">{moves}</span>
-                </p>
-                <p className="text-foreground">
-                  {texts.time}: <span className="font-bold">{formatTime(timer)}</span>
-                </p>
-              </div>
+            {/* Stars */}
+            <div className="flex justify-center gap-2 mb-5">
+              {[...Array(3)].map((_, i) => (
+                <span key={i} className={cn('text-4xl transition-all', i < getStars() ? 'opacity-100' : 'opacity-20 grayscale')}>⭐</span>
+              ))}
+            </div>
 
-              <div className="flex gap-3 justify-center">
-                <Button onClick={initializeGame} className="gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  {texts.restart}
-                </Button>
-                <Button variant="outline" onClick={onBack}>
-                  {texts.back}
-                </Button>
+            {/* Score details */}
+            <div className="bg-slate-50 rounded-2xl p-4 mb-5 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold text-sm">✨ {texts.moves}</span>
+                <span className="font-extrabold text-slate-700">{moves}</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold text-sm">⏱️ {texts.time}</span>
+                <span className="font-extrabold text-slate-700">{formatTime(timer)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button onClick={initializeGame} className="flex-1 rounded-2xl gap-2 font-bold bg-violet-500 hover:bg-violet-600 text-white">
+                <RotateCcw className="h-4 w-4" />
+                {texts.restart}
+              </Button>
+              <Button variant="outline" onClick={onBack} className="flex-1 rounded-2xl font-bold border-2">
+                {texts.back}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

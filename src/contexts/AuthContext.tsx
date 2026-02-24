@@ -168,8 +168,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               user_id: user.id,
               name_ar: user.name,
               name_fr: user.name,
-              age: 18, // Default age
-              dialysis_type: 'HD', // Default dialysis type
+              age: 18, 
+              dialysis_type: 'HD', 
               status: 'active' // Default status
             });
 

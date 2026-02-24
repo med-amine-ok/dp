@@ -128,7 +128,7 @@ const PatientDashboard: React.FC = () => {
         </div>
 
         {/* Profile Completion Banner */}
-        {profileComplete === false && (
+        {/* {profileComplete === false && (
           <Link to="/patient/profile">
             <div className="flex items-center justify-between gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-6 py-4 hover:shadow-md transition-all duration-300 hover:scale-[1.005] cursor-pointer">
               <div className="flex items-center gap-4">
@@ -152,10 +152,10 @@ const PatientDashboard: React.FC = () => {
               </div>
             </div>
           </Link>
-        )}
+        )} */}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DashboardCard
             title={language === 'ar' ? 'الفيديوهات' : 'Vidéos'}
             value={stats.videos.toString()}
@@ -177,7 +177,7 @@ const PatientDashboard: React.FC = () => {
             icon={Star}
             color="primary"
           />
-        </div>
+        </div> */}
 
         {/* Quick Links */}
         <div>

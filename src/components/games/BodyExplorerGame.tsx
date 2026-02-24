@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, RotateCcw, Star, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface BodyPart {
   id: string;
@@ -137,176 +134,147 @@ const BodyExplorerGame: React.FC<BodyExplorerGameProps> = ({ onBack }) => {
   const isComplete = exploredParts.size === BODY_PARTS.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-playful-green/10 via-background to-playful-purple/10 p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-violet-50 p-4 md:p-6">
+      {/* ── Header ── */}
+      <div className="max-w-4xl mx-auto mb-5">
+        <div className="flex items-center justify-between mb-5">
+          <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors">
+            <ArrowLeft className="h-4 w-4" /> {texts.back}
+          </button>
+          <button
+            onClick={() => { setExploredParts(new Set()); setCurrentPartIndex(0); setShowFunFact(false); }}
+            className="flex items-center gap-2 text-sm font-bold text-teal-600 bg-teal-100 hover:bg-teal-200 px-4 py-2 rounded-full transition-all"
           >
-            <ArrowLeft className="h-4 w-4" />
-            {texts.back}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setExploredParts(new Set());
-              setCurrentPartIndex(0);
-              setShowFunFact(false);
-            }}
-            className="gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            {texts.restart}
-          </Button>
+            <RotateCcw className="h-4 w-4" /> {texts.restart}
+          </button>
         </div>
 
         <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-            🔬 {texts.title}
-          </h1>
+          <div className="text-5xl mb-1">🔬</div>
+          <h1 className="text-3xl font-extrabold text-slate-800">{texts.title}</h1>
         </div>
 
         {/* Progress */}
-        <div className="mb-4">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
-            <span>{exploredParts.size}/{BODY_PARTS.length} {texts.explored}</span>
-            <span>{Math.round(progress)}%</span>
+        <div className="bg-white rounded-2xl border-2 border-teal-100 p-3 shadow-sm">
+          <div className="flex justify-between text-sm font-bold text-slate-500 mb-2">
+            <span>🔍 {exploredParts.size}/{BODY_PARTS.length} {texts.explored}</span>
+            <span className="text-teal-600">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-3" />
+          <div className="h-3 bg-teal-100 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+      {/* ── Main ── */}
+      <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-5">
         {/* Body Diagram */}
-        <Card className="card-shadow">
-          <CardContent className="p-6">
-            <div className="relative aspect-[3/4] bg-gradient-to-b from-playful-purple/10 to-playful-green/10 rounded-xl overflow-hidden">
-              {/* Simple body outline */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-[120px] opacity-20">🧍</div>
-              </div>
-              
-              {/* Interactive body parts */}
-              {BODY_PARTS.map((part, index) => (
-                <button
-                  key={part.id}
-                  onClick={() => handlePartClick(index)}
-                  className={cn(
-                    'absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl transition-all duration-300',
-                    'hover:scale-125 cursor-pointer',
-                    currentPartIndex === index && 'scale-125 animate-pulse-soft',
-                    exploredParts.has(part.id) && 'ring-2 ring-playful-green rounded-full'
-                  )}
-                  style={{ left: `${part.position.x}%`, top: `${part.position.y}%` }}
-                >
-                  {part.emoji}
-                </button>
-              ))}
+        <div className="bg-white rounded-3xl border-4 border-teal-200 shadow-lg p-5">
+          <div className="relative aspect-[3/4] bg-gradient-to-b from-teal-50 to-emerald-50 rounded-2xl overflow-hidden border-2 border-teal-100">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[120px] opacity-10 select-none">🧍</span>
             </div>
+            {BODY_PARTS.map((part, index) => (
+              <button
+                key={part.id}
+                onClick={() => handlePartClick(index)}
+                className={cn(
+                  'absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 rounded-full p-1',
+                  'hover:scale-125 cursor-pointer',
+                  currentPartIndex === index && 'scale-[1.35] ring-4 ring-violet-400 ring-offset-2 bg-violet-100',
+                  exploredParts.has(part.id) && currentPartIndex !== index && 'bg-emerald-100 ring-2 ring-emerald-400 ring-offset-1'
+                )}
+                style={{ left: `${part.position.x}%`, top: `${part.position.y}%`, fontSize: currentPartIndex === index ? '2.5rem' : '2rem' }}
+              >
+                {part.emoji}
+              </button>
+            ))}
+          </div>
 
-            {/* Part Navigation */}
-            <div className="flex justify-center gap-2 mt-4">
-              {BODY_PARTS.map((part, index) => (
-                <button
-                  key={part.id}
-                  onClick={() => handlePartClick(index)}
-                  className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all',
-                    currentPartIndex === index 
-                      ? 'bg-primary text-primary-foreground scale-110'
-                      : exploredParts.has(part.id)
-                        ? 'bg-playful-green/20'
-                        : 'bg-muted hover:bg-muted/80'
-                  )}
-                >
-                  {part.emoji}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Organ nav dots */}
+          <div className="flex justify-center gap-2 mt-4 flex-wrap">
+            {BODY_PARTS.map((part, index) => (
+              <button
+                key={part.id}
+                onClick={() => handlePartClick(index)}
+                className={cn(
+                  'w-10 h-10 rounded-2xl flex items-center justify-center text-xl transition-all border-2 shadow-sm',
+                  currentPartIndex === index
+                    ? 'bg-gradient-to-br from-violet-500 to-teal-500 border-violet-400 scale-110 shadow-md'
+                    : exploredParts.has(part.id)
+                      ? 'bg-emerald-100 border-emerald-300'
+                      : 'bg-white border-slate-200 hover:border-teal-300 hover:scale-105'
+                )}
+              >
+                {part.emoji}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Info Panel */}
         <div className="space-y-4">
-          <Card className={cn(
-            'card-shadow transition-all duration-300',
-            'bg-gradient-to-br from-playful-purple/10 to-playful-green/10'
-          )}>
-            <CardContent className="p-6">
-              <div className="text-center mb-4">
-                <span className="text-6xl animate-bounce-gentle">{currentPart.emoji}</span>
+          <div className="bg-white rounded-3xl border-4 border-violet-200 shadow-lg p-6">
+            <div className="text-center mb-4">
+              <span className="text-7xl animate-bounce-gentle">{currentPart.emoji}</span>
+            </div>
+
+            <h2 className="text-2xl font-extrabold text-slate-800 text-center mb-3">
+              {language === 'ar' ? currentPart.nameAr : currentPart.nameFr}
+            </h2>
+
+            <p className="text-slate-600 text-center mb-5 leading-relaxed">
+              {language === 'ar' ? currentPart.descriptionAr : currentPart.descriptionFr}
+            </p>
+
+            {!showFunFact ? (
+              <button
+                onClick={handleExplore}
+                className="w-full py-4 rounded-2xl font-extrabold text-lg text-white bg-gradient-to-r from-violet-500 to-teal-500 hover:from-violet-600 hover:to-teal-600 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                ✨ {texts.explore}
+              </button>
+            ) : (
+              <div className="bg-amber-50 border-4 border-amber-300 rounded-2xl p-4">
+                <p className="font-extrabold text-amber-700 flex items-center gap-2 mb-2">
+                  ⭐ {texts.funFact}
+                </p>
+                <p className="text-slate-700 leading-relaxed">
+                  {language === 'ar' ? currentPart.funFactAr : currentPart.funFactFr}
+                </p>
               </div>
-              
-              <h2 className="text-2xl font-bold text-foreground text-center mb-4">
-                {language === 'ar' ? currentPart.nameAr : currentPart.nameFr}
-              </h2>
-              
-              <p className="text-muted-foreground text-center mb-6">
-                {language === 'ar' ? currentPart.descriptionAr : currentPart.descriptionFr}
-              </p>
+            )}
+          </div>
 
-              {!showFunFact ? (
-                <Button 
-                  onClick={handleExplore}
-                  className="w-full gap-2"
-                  size="lg"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {texts.explore}
-                </Button>
-              ) : (
-                <div className="animate-fade-in">
-                  <div className="bg-playful-yellow/20 rounded-xl p-4 border border-playful-yellow/30">
-                    <p className="font-bold text-foreground flex items-center gap-2 mb-2">
-                      <Star className="h-5 w-5 text-playful-yellow" />
-                      {texts.funFact}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {language === 'ar' ? currentPart.funFactAr : currentPart.funFactFr}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Navigation Buttons */}
+          {/* Prev / Next */}
           <div className="flex gap-3">
-            <Button
-              variant="outline"
+            <button
               onClick={handlePrev}
               disabled={currentPartIndex === 0}
-              className="flex-1 gap-2"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-extrabold border-4 border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="h-4 w-4" />
-              {language === 'ar' ? 'السابق' : 'Précédent'}
-            </Button>
-            <Button
+              {language === 'ar' ? 'السابق' : 'Préc.'}
+            </button>
+            <button
               onClick={handleNext}
               disabled={currentPartIndex === BODY_PARTS.length - 1}
-              className="flex-1 gap-2"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-extrabold border-4 border-teal-300 bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-md"
             >
               {language === 'ar' ? 'التالي' : 'Suivant'}
               <ChevronRight className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
 
-          {/* Completion Message */}
+          {/* Completion celebration */}
           {isComplete && (
-            <Card className="bg-gradient-to-r from-playful-yellow/20 to-playful-orange/20 border-none animate-scale-in">
-              <CardContent className="p-4 text-center">
-                <div className="flex justify-center gap-1 mb-2">
-                  {[1,2,3].map(i => (
-                    <Star key={i} className="h-6 w-6 text-playful-yellow fill-playful-yellow" />
-                  ))}
-                </div>
-                <p className="font-bold text-foreground">{texts.complete}</p>
-              </CardContent>
-            </Card>
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-4 border-amber-300 rounded-3xl p-5 text-center shadow-md">
+              <div className="text-4xl mb-2">🏆</div>
+              <div className="flex justify-center gap-1 mb-2">
+                {[1,2,3].map(i => <span key={i} className="text-3xl">⭐</span>)}
+              </div>
+              <p className="font-extrabold text-slate-800">{texts.complete}</p>
+            </div>
           )}
         </div>
       </div>

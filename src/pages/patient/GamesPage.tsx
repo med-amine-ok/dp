@@ -17,14 +17,19 @@ import ColoringCornerGame from '@/components/games/ColoringCornerGame';
 import BreathingBuddyGame from '@/components/games/BreathingBuddyGame';
 import WaterBalanceGame from '@/components/games/WaterBalanceGame';
 
-type ActiveGame = 'none' | 'memory' | 'quiz' | 'body' | 'medicine' | 'puzzle' | 'coloring' | 'breathing' | 'water';
+type ActiveGame = 'none' | 'memory' | 'quiz' | 'medicine' | 'puzzle' |  'breathing' | 'water';
 
 const GamesPage: React.FC = () => {
   const { language, t } = useLanguage();
   const [activeGame, setActiveGame] = useState<ActiveGame>('none');
+  const [gamesPlayed, setGamesPlayed] = useState<Set<string>>(new Set());
 
   const educationalGames = mockGames.filter(g => g.type === 'educational');
   const relaxationGames = mockGames.filter(g => g.type === 'relaxation');
+
+  const totalGames = mockGames.length;
+  const starsEarned = gamesPlayed.size * 3;
+  const maxStars = totalGames * 3;
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -62,15 +67,17 @@ const GamesPage: React.FC = () => {
   const handleGameClick = (gameId: string) => {
     const gameMap: Record<string, ActiveGame> = {
       '1': 'quiz',
-      '2': 'body',
       '3': 'medicine',
       '4': 'memory',
       '5': 'puzzle',
-      '6': 'coloring',
       '7': 'breathing',
       '8': 'water',
     };
-    setActiveGame(gameMap[gameId] || 'none');
+    const game = gameMap[gameId];
+    if (game) {
+      setGamesPlayed(prev => new Set(prev).add(gameId));
+      setActiveGame(game);
+    }
   };
 
   const GameCard = ({ game, index }: { game: typeof mockGames[0]; index: number }) => {
@@ -148,17 +155,12 @@ const GamesPage: React.FC = () => {
   if (activeGame === 'quiz') {
     return <HealthQuizGame onBack={() => setActiveGame('none')} />;
   }
-  if (activeGame === 'body') {
-    return <BodyExplorerGame onBack={() => setActiveGame('none')} />;
-  }
+ 
   if (activeGame === 'medicine') {
     return <MedicineMatchGame onBack={() => setActiveGame('none')} />;
   }
   if (activeGame === 'puzzle') {
     return <PuzzleGardenGame onBack={() => setActiveGame('none')} />;
-  }
-  if (activeGame === 'coloring') {
-    return <ColoringCornerGame onBack={() => setActiveGame('none')} />;
   }
   if (activeGame === 'breathing') {
     return <BreathingBuddyGame onBack={() => setActiveGame('none')} />;
@@ -206,7 +208,7 @@ const GamesPage: React.FC = () => {
               <div className="flex-1 text-center md:text-start">
                 <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2 justify-center md:justify-start">
                   <Trophy className="h-6 w-6 text-playful-yellow" />
-                  {language === 'ar' ? '8 ألعاب متاحة!' : '8 jeux disponibles !'}
+                  {language === 'ar' ? `${totalGames} ألعاب متاحة!` : `${totalGames} jeux disponibles !`}
                 </h2>
                 <p className="text-foreground/80 text-lg">
                   {language === 'ar'
@@ -285,7 +287,7 @@ const GamesPage: React.FC = () => {
                 </h2>
                 <div className="flex-1 h-0.5 bg-gradient-to-r from-playful-purple/30 to-transparent rounded-full" />
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {educationalGames.map((game, index) => (
                   <GameCard key={game.id} game={game} index={index} />
                 ))}
@@ -303,7 +305,7 @@ const GamesPage: React.FC = () => {
                 </h2>
                 <div className="flex-1 h-0.5 bg-gradient-to-r from-playful-pink/30 to-transparent rounded-full" />
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {relaxationGames.map((game, index) => (
                   <GameCard key={game.id} game={game} index={index} />
                 ))}
@@ -346,20 +348,32 @@ const GamesPage: React.FC = () => {
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2 justify-center sm:justify-start">
                 <Trophy className="h-6 w-6 text-playful-orange" />
-                {language === 'ar' ? 'أنت بطل!' : 'Tu es un champion !'}
+                {gamesPlayed.size === 0
+                  ? (language === 'ar' ? 'ابدأ اللعب!' : 'Commence à jouer !')
+                  : gamesPlayed.size === totalGames
+                    ? (language === 'ar' ? 'أنت بطل! أتممت كل الألعاب!' : 'Champion ! Tu as tout terminé !')
+                    : (language === 'ar' ? 'أنت رائع! استمر!' : 'Super ! Continue comme ça !')}
               </h3>
               <p className="text-foreground/70 text-lg">
                 {language === 'ar'
-                  ? 'لقد لعبت 8 ألعاب هذا الأسبوع. استمر!'
-                  : 'Tu as joué à 8 jeux cette semaine. Continue !'}
+                  ? `لعبت ${gamesPlayed.size} من أصل ${totalGames} ألعاب`
+                  : `${gamesPlayed.size} jeu${gamesPlayed.size !== 1 ? 'x' : ''} joué${gamesPlayed.size !== 1 ? 's' : ''} sur ${totalGames}`}
               </p>
+              {/* Progress bar */}
+              <div className="mt-3 h-2 bg-white/30 rounded-full overflow-hidden max-w-xs mx-auto sm:mx-0">
+                <div
+                  className="h-full bg-gradient-to-r from-playful-yellow to-playful-orange rounded-full transition-all duration-700"
+                  style={{ width: `${totalGames > 0 ? (gamesPlayed.size / totalGames) * 100 : 0}%` }}
+                />
+              </div>
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl" />
               <div className="relative text-center bg-white/90 backdrop-blur-sm rounded-2xl px-8 py-4 shadow-lg border border-white/20">
                 <span className="text-4xl font-bold bg-gradient-to-br from-playful-yellow to-playful-orange bg-clip-text text-transparent">
-                  42
+                  {starsEarned}
                 </span>
+                <p className="text-xs text-foreground/50 font-medium">/ {maxStars}</p>
                 <p className="text-sm font-semibold text-foreground/70 mt-1 flex items-center gap-1 justify-center">
                   <Sparkles className="h-3 w-3 text-playful-yellow" />
                   {language === 'ar' ? 'نجوم' : 'étoiles'}

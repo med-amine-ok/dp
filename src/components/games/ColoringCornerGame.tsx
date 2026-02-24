@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, RotateCcw, Palette, Eraser, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Eraser, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ColoringCornerGameProps {
   onBack: () => void;
@@ -117,150 +115,126 @@ const ColoringCornerGame: React.FC<ColoringCornerGameProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-playful-yellow/10 via-background to-playful-pink/10 p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-pink-50 p-4 md:p-6">
+      {/* ── Header ── */}
+      <div className="max-w-4xl mx-auto mb-5">
         <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {texts.back}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={resetCurrentPage}
-            className="gap-2"
-          >
-            <Eraser className="h-4 w-4" />
-            {texts.clear}
-          </Button>
+          <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors">
+            <ArrowLeft className="h-4 w-4" /> {texts.back}
+          </button>
+          <button onClick={resetCurrentPage} className="flex items-center gap-2 text-sm font-bold text-amber-600 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-full transition-all">
+            <Eraser className="h-4 w-4" /> {texts.clear}
+          </button>
         </div>
-
-        <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-            🎨 {texts.title}
-          </h1>
-          <p className="text-muted-foreground">{texts.clickToColor}</p>
+        <div className="text-center mb-2">
+          <div className="text-5xl mb-1">🎨</div>
+          <h1 className="text-3xl font-extrabold text-slate-800">{texts.title}</h1>
+          <p className="text-sm font-semibold text-slate-400 mt-1">{texts.clickToColor}</p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto grid md:grid-cols-[1fr_auto] gap-6">
-        {/* Canvas Area */}
-        <Card className="card-shadow">
-          <CardContent className="p-6">
-            {/* Page Title */}
-            <h2 className="text-xl font-bold text-center text-foreground mb-4">
-              {language === 'ar' ? currentPage.nameAr : currentPage.nameFr}
-            </h2>
+      {/* ── Main ── */}
+      <div className="max-w-4xl mx-auto grid md:grid-cols-[1fr_160px] gap-5 items-start">
+        {/* Canvas */}
+        <div className="bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-5">
+          <h2 className="text-xl font-extrabold text-center text-slate-800 mb-4">
+            {language === 'ar' ? currentPage.nameAr : currentPage.nameFr}
+          </h2>
 
-            {/* SVG Canvas */}
-            <div className="aspect-square bg-white rounded-xl shadow-inner flex items-center justify-center p-8">
-              <svg
-                viewBox="0 0 160 200"
-                className="w-full h-full max-w-xs"
-              >
-                {currentPage.shapes.map((shape) => (
-                  <path
-                    key={shape.id}
-                    d={shape.path}
-                    fill={getShapeColor(shape.id)}
-                    stroke="#333"
-                    strokeWidth="2"
-                    onClick={() => handleShapeClick(shape.id)}
-                    className={cn(
-                      'transition-colors duration-200',
-                      !shape.id.includes('eye') && !shape.id.includes('smile') && 'cursor-pointer hover:opacity-80'
-                    )}
-                  />
-                ))}
-              </svg>
-            </div>
-
-            {/* Page Navigation */}
-            <div className="flex items-center justify-between mt-4">
-              <Button
-                variant="outline"
-                onClick={prevPage}
-                disabled={currentPageIndex === 0}
-                size="sm"
-                className="gap-1"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {language === 'ar' ? 'السابق' : 'Précédent'}
-              </Button>
-              
-              <div className="flex gap-2">
-                {COLORING_PAGES.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentPageIndex(index)}
-                    className={cn(
-                      'w-3 h-3 rounded-full transition-all',
-                      currentPageIndex === index
-                        ? 'bg-primary scale-125'
-                        : 'bg-muted hover:bg-muted-foreground/30'
-                    )}
-                  />
-                ))}
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={nextPage}
-                disabled={currentPageIndex === COLORING_PAGES.length - 1}
-                size="sm"
-                className="gap-1"
-              >
-                {language === 'ar' ? 'التالي' : 'Suivant'}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Color Palette */}
-        <Card className="card-shadow h-fit">
-          <CardContent className="p-4">
-            <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              {texts.colors}
-            </h3>
-            <div className="grid grid-cols-4 md:grid-cols-2 gap-2">
-              {COLOR_PALETTE.map((color) => (
-                <button
-                  key={color.hex}
-                  onClick={() => setSelectedColor(color.hex)}
+          {/* SVG */}
+          <div className="aspect-square bg-gradient-to-br from-slate-50 to-white rounded-2xl border-4 border-dashed border-amber-200 flex items-center justify-center p-6 shadow-inner">
+            <svg viewBox="0 0 160 200" className="w-full h-full max-w-xs">
+              {currentPage.shapes.map((shape) => (
+                <path
+                  key={shape.id}
+                  d={shape.path}
+                  fill={getShapeColor(shape.id)}
+                  stroke="#2d2d2d"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                  onClick={() => handleShapeClick(shape.id)}
                   className={cn(
-                    'w-10 h-10 rounded-lg transition-all duration-200 border-2',
-                    selectedColor === color.hex
-                      ? 'scale-110 ring-2 ring-primary ring-offset-2'
-                      : 'hover:scale-105',
-                    color.hex === '#ffffff' ? 'border-gray-300' : 'border-transparent'
+                    'transition-all duration-200',
+                    !shape.id.includes('eye') && !shape.id.includes('smile')
+                      ? 'cursor-pointer hover:opacity-75 hover:drop-shadow-lg'
+                      : 'cursor-default'
                   )}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
+                />
+              ))}
+            </svg>
+          </div>
+
+          {/* Page nav */}
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={prevPage}
+              disabled={currentPageIndex === 0}
+              className="flex items-center gap-1 text-sm font-extrabold text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed bg-white border-2 border-slate-200 hover:border-amber-300 px-3 py-2 rounded-xl transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {language === 'ar' ? 'السابق' : 'Préc.'}
+            </button>
+
+            <div className="flex gap-2.5">
+              {COLORING_PAGES.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPageIndex(index)}
+                  className={cn(
+                    'w-3.5 h-3.5 rounded-full transition-all border-2',
+                    currentPageIndex === index
+                      ? 'bg-amber-400 border-amber-500 scale-125'
+                      : 'bg-slate-200 border-slate-300 hover:bg-amber-200'
+                  )}
                 />
               ))}
             </div>
 
-            {/* Selected Color Preview */}
-            <div className="mt-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-lg border-2 border-gray-300"
-                  style={{ backgroundColor: selectedColor }}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {language === 'ar' ? 'اللون المحدد' : 'Couleur sélectionnée'}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={nextPage}
+              disabled={currentPageIndex === COLORING_PAGES.length - 1}
+              className="flex items-center gap-1 text-sm font-extrabold text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed bg-white border-2 border-slate-200 hover:border-amber-300 px-3 py-2 rounded-xl transition-all"
+            >
+              {language === 'ar' ? 'التالي' : 'Suiv.'}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Color palette */}
+        <div className="bg-white rounded-3xl border-4 border-amber-200 shadow-lg p-4">
+          <h3 className="font-extrabold text-slate-700 mb-3 text-sm text-center">
+            🎨 {texts.colors}
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color.hex}
+                onClick={() => setSelectedColor(color.hex)}
+                className={cn(
+                  'w-full aspect-square rounded-2xl transition-all duration-200 border-4 shadow-sm',
+                  selectedColor === color.hex
+                    ? 'scale-110 ring-4 ring-offset-2 ring-amber-400 border-white shadow-lg'
+                    : 'border-transparent hover:scale-110 hover:border-white hover:shadow-md',
+                  color.hex === '#ffffff' && 'border-gray-300'
+                )}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              />
+            ))}
+          </div>
+
+          {/* Selected preview */}
+          <div className="mt-4 p-3 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+            <p className="text-xs font-extrabold text-amber-700 mb-2 text-center">
+              {language === 'ar' ? 'اللون المختار' : 'Couleur choisie'}
+            </p>
+            <div
+              className="w-12 h-12 rounded-2xl border-4 border-white shadow-md mx-auto"
+              style={{ backgroundColor: selectedColor }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

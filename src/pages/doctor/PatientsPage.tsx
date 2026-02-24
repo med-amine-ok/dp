@@ -153,7 +153,6 @@ const PatientsPage: React.FC = () => {
                 <TableRow>
                   <TableHead>{language === 'ar' ? 'المريض' : 'Patient'}</TableHead>
                   <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
-                  
                   <TableHead className="text-center">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
                 </TableRow>
               </TableHeader>

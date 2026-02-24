@@ -292,18 +292,7 @@ export const mockGames: Game[] = [
     icon: '🧠',
     color: 'playful-purple',
   },
-  {
-    id: '2',
-    titleFr: 'Explorateur du Corps',
-    titleAr: 'مستكشف الجسم',
-    descriptionFr: 'Découvre comment fonctionne ton corps',
-    descriptionAr: 'اكتشف كيف يعمل جسمك',
-    type: 'educational',
-    difficulty: 'medium',
-    duration: 15,
-    icon: '🔬',
-    color: 'playful-green',
-  },
+ 
   {
     id: '3',
     titleFr: 'Association Médicaments',
@@ -340,18 +329,7 @@ export const mockGames: Game[] = [
     icon: '🧩',
     color: 'playful-green',
   },
-  {
-    id: '6',
-    titleFr: 'Coin Coloriage',
-    titleAr: 'ركن التلوين',
-    descriptionFr: 'Colorie de belles images',
-    descriptionAr: 'لون صور جميلة',
-    type: 'relaxation',
-    difficulty: 'easy',
-    duration: 10,
-    icon: '🎨',
-    color: 'playful-yellow',
-  },
+  
   {
     id: '7',
     titleFr: 'Ami Respiration',
