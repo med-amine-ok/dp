@@ -29,6 +29,13 @@ interface ActiveUser {
   status: 'online' | 'away';
 }
 
+interface SystemStatus {
+  name: string;
+  status: 'online' | 'warning' | 'offline';
+  uptime: string;
+  icon: React.ElementType;
+}
+
 interface SystemAlert {
   type: 'warning' | 'info' | 'success' | 'error';
   message: string;
@@ -40,79 +47,144 @@ const MonitoringPage: React.FC = () => {
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus[]>([]);
+
+  const checkSystemStatus = async () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+
+    const measure = async (fn: () => Promise<unknown>): Promise<{ ok: boolean; ms: number }> => {
+      const start = Date.now();
+      try {
+        await fn();
+        return { ok: true, ms: Date.now() - start };
+      } catch {
+        return { ok: false, ms: Date.now() - start };
+      }
+    };
+
+    const [serverResult, dbResult, authResult, storageResult] = await Promise.all([
+      // 1. Supabase REST health endpoint
+      measure(() => fetch(`${supabaseUrl}/rest/v1/`, { method: 'HEAD' })),
+      // 2. Database – lightweight query
+      measure(async () => {
+        const { error } = await supabase.from('profiles').select('id').limit(1);
+        if (error) throw error;
+      }),
+      // 3. Auth service
+      measure(async () => {
+        const { error } = await supabase.auth.getSession();
+        if (error) throw error;
+      }),
+      // 4. Storage service
+      measure(async () => {
+        const { error } = await supabase.storage.listBuckets();
+        if (error) throw error;
+      }),
+    ]);
+
+    const toStatus = (ok: boolean, ms: number): 'online' | 'warning' | 'offline' =>
+      !ok ? 'offline' : ms > 1500 ? 'warning' : 'online';
+
+    const toUptime = (ok: boolean, ms: number) =>
+      ok ? `${ms} ms` : (language === 'ar' ? 'غير متاح' : 'Indisponible');
+
+    setSystemStatus([
+      {
+        name: language === 'ar' ? 'الخادم الرئيسي' : 'Serveur principal',
+        status: toStatus(serverResult.ok, serverResult.ms),
+        uptime: toUptime(serverResult.ok, serverResult.ms),
+        icon: Server,
+      },
+      {
+        name: language === 'ar' ? 'قاعدة البيانات' : 'Base de données',
+        status: toStatus(dbResult.ok, dbResult.ms),
+        uptime: toUptime(dbResult.ok, dbResult.ms),
+        icon: Database,
+      },
+      {
+        name: language === 'ar' ? 'خدمة المصادقة' : "Service d'authentification",
+        status: toStatus(authResult.ok, authResult.ms),
+        uptime: toUptime(authResult.ok, authResult.ms),
+        icon: Wifi,
+      },
+      {
+        name: language === 'ar' ? 'نظام التخزين' : 'Système de stockage',
+        status: toStatus(storageResult.ok, storageResult.ms),
+        uptime: toUptime(storageResult.ok, storageResult.ms),
+        icon: RefreshCw,
+      },
+    ]);
+  };
+
+  const fetchActiveUsers = async () => {
+    const { data: recentProfiles } = await supabase
+      .from('profiles')
+      .select('name_fr, name_ar, updated_at, user_id')
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    if (recentProfiles) {
+      const mappedUsers: ActiveUser[] = recentProfiles.map(p => {
+        const lastSeenDate = new Date(p.updated_at);
+        const diffMins = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+        return {
+          name: language === 'ar' ? p.name_ar : p.name_fr,
+          role: 'User',
+          lastSeen: diffMins < 1 ? (language === 'ar' ? 'الآن' : 'À l\'instant') : `${diffMins}m`,
+          status: diffMins < 15 ? 'online' : 'away',
+        };
+      });
+      setActiveUsers(mappedUsers);
+    }
+  };
+
+  const fetchAlerts = async () => {
+    const { data: criticalForms } = await supabase
+      .from('health_forms')
+      .select('mood, pain_level, created_at, patients(name_fr, name_ar)')
+      .or('mood.lte.2,pain_level.gte.3')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const systemAlerts: SystemAlert[] = [];
+
+    criticalForms?.forEach(f => {
+      const patientName = language === 'ar' ? (f.patients as any).name_ar : (f.patients as any).name_fr;
+      if (f.mood <= 2) {
+        systemAlerts.push({
+          type: 'warning',
+          message: language === 'ar'
+            ? `مزاج منخفض للمريض: ${patientName}`
+            : `Humeur basse pour le patient: ${patientName}`,
+          time: new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
+      if (f.pain_level >= 3) {
+        systemAlerts.push({
+          type: 'error',
+          message: language === 'ar'
+            ? `ألم شديد للمريض: ${patientName}`
+            : `Douleur intense pour le patient: ${patientName}`,
+          time: new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
+    });
+
+    if (systemAlerts.length === 0) {
+      systemAlerts.push({
+        type: 'success',
+        message: language === 'ar' ? 'جميع الأنظمة تعمل بشكل جيد' : 'Tous les systèmes fonctionnent normalement',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    }
+
+    setAlerts(systemAlerts);
+  };
 
   const fetchMonitoringData = async () => {
     try {
       setLoading(true);
-
-      // 1. Fetch "Active" Users (Updated in last 24 hours for this demo, or last 15 mins for realism)
-      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-
-      const { data: recentProfiles } = await supabase
-        .from('profiles')
-        .select('name_fr, name_ar, updated_at, user_id')
-        .order('updated_at', { ascending: false })
-        .limit(5);
-
-      if (recentProfiles) {
-        // We'd normally check user_roles to get the role, but for monitoring we can simplify
-        // or join with profiles. For now, let's map them.
-        const mappedUsers: ActiveUser[] = recentProfiles.map(p => {
-          const lastSeenDate = new Date(p.updated_at);
-          const diffMins = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
-
-          return {
-            name: language === 'ar' ? p.name_ar : p.name_fr,
-            role: 'User', // Generic for now
-            lastSeen: diffMins < 1 ? 'Just now' : `${diffMins}m`,
-            status: diffMins < 15 ? 'online' : 'away'
-          };
-        });
-        setActiveUsers(mappedUsers);
-      }
-
-      // 2. Fetch "Alerts" from Health Forms (Low mood or High pain)
-      const { data: criticalForms } = await supabase
-        .from('health_forms')
-        .select('mood, pain_level, created_at, patients(name_fr, name_ar)')
-        .or('mood.lte.2,pain_level.gte.3')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const systemAlerts: SystemAlert[] = [];
-
-      criticalForms?.forEach(f => {
-        const patientName = language === 'ar' ? (f.patients as any).name_ar : (f.patients as any).name_fr;
-        if (f.mood <= 2) {
-          systemAlerts.push({
-            type: 'warning',
-            message: language === 'ar'
-              ? `مزاج منخفض للمريض: ${patientName}`
-              : `Humeur basse pour le patient: ${patientName}`,
-            time: new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          });
-        }
-        if (f.pain_level >= 3) {
-          systemAlerts.push({
-            type: 'error',
-            message: language === 'ar'
-              ? `ألم شديد للمريض: ${patientName}`
-              : `Douleur intense pour le patient: ${patientName}`,
-            time: new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          });
-        }
-      });
-
-      // Add some generic system alerts if none found
-      if (systemAlerts.length === 0) {
-        systemAlerts.push({
-          type: 'success',
-          message: language === 'ar' ? 'جميع الأنظمة تعمل بشكل جيد' : 'Tous les systèmes fonctionnent normalement',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-      }
-
-      setAlerts(systemAlerts);
+      await Promise.all([checkSystemStatus(), fetchActiveUsers(), fetchAlerts()]);
     } catch (error) {
       console.error('Error fetching monitoring data:', error);
     } finally {
@@ -122,34 +194,34 @@ const MonitoringPage: React.FC = () => {
 
   useEffect(() => {
     fetchMonitoringData();
-  }, [language]);
 
-  const systemStatus = [
-    {
-      name: language === 'ar' ? 'الخادم الرئيسي' : 'Serveur principal',
-      status: 'online',
-      uptime: '99.9%',
-      icon: Server
-    },
-    {
-      name: language === 'ar' ? 'قاعدة البيانات' : 'Base de données',
-      status: 'online',
-      uptime: '99.8%',
-      icon: Database
-    },
-    {
-      name: language === 'ar' ? 'خدمة المصادقة' : 'Service d\'authentification',
-      status: 'online',
-      uptime: '100%',
-      icon: Wifi
-    },
-    {
-      name: language === 'ar' ? 'نظام التخزين' : 'Système de stockage',
-      status: 'online',
-      uptime: '100%',
-      icon: RefreshCw
-    },
-  ];
+    // Poll system latency every 10 seconds
+    const statusInterval = setInterval(checkSystemStatus, 1_000);
+
+    // Refresh "last seen" timestamps every 30 seconds
+    const usersInterval = setInterval(fetchActiveUsers, 30_000);
+
+    // Real-time subscription: new health_form row → refresh alerts instantly
+    const channel = supabase
+      .channel('monitoring-health-forms')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'health_forms' },
+        () => fetchAlerts()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        () => fetchActiveUsers()
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(statusInterval);
+      clearInterval(usersInterval);
+      supabase.removeChannel(channel);
+    };
+  }, [language]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
