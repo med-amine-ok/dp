@@ -47,42 +47,47 @@ const StatisticsPage: React.FC = () => {
           .gte('created_at', thirtyDaysAgo.toISOString());
 
         // 2. Health Forms
-        const { data: healthForms } = await supabase
+        const { data: healthForms, error: formsError } = await supabase
           .from('health_forms')
           .select('mood, pain_level, created_at');
 
-        const totalForms = healthForms?.length || 0;
-        const moodSum = healthForms?.reduce((acc, f) => acc + (f.mood || 0), 0) || 0;
-        const painSum = healthForms?.reduce((acc, f) => acc + (f.pain_level || 0), 0) || 0;
+        const safeHealthForms = formsError ? [] : (healthForms || []);
+        const totalForms = safeHealthForms.length;
+        const moodSum = safeHealthForms.reduce((acc, f) => acc + (f.mood || 0), 0);
+        const painSum = safeHealthForms.reduce((acc, f) => acc + (f.pain_level || 0), 0);
 
         const satisfaction = totalForms > 0 ? Math.round((moodSum / (totalForms * 5)) * 100) : 0;
         const avgPain = totalForms > 0 ? Number((painSum / totalForms).toFixed(1)) : 0;
 
-        // Success rate estimation (% of patients with mood >= 3)
-        const successCount = healthForms?.filter(f => f.mood >= 3).length || 0;
-        const successRate = totalForms > 0 ? Math.round((successCount / totalForms) * 100) : 85;
+        const successCount = safeHealthForms.filter(f => f.mood >= 3).length;
+        const successRate = totalForms > 0 ? Math.round((successCount / totalForms) * 100) : 0;
 
-        // Presence rate estimation (avg forms per patient in last 7 days vs expected)
-        const { count: totalPatients } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+        const { count: totalPatients } = await supabase
+          .from('patients')
+          .select('*', { count: 'exact', head: true });
+
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentForms = healthForms?.filter(f => new Date(f.created_at) >= sevenDaysAgo).length || 0;
+        const recentForms = safeHealthForms.filter(f => new Date(f.created_at) >= sevenDaysAgo).length;
         const expectedForms = (totalPatients || 0) * 7;
         const presenceRate = expectedForms > 0 ? Math.round((recentForms / expectedForms) * 100) : 0;
 
-        // Previous forms (for trend)
         const sixtyDaysAgo = new Date();
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-        const prevForms = healthForms?.filter(f => {
+        const prevForms = safeHealthForms.filter(f => {
           const date = new Date(f.created_at);
           return date >= sixtyDaysAgo && date < thirtyDaysAgo;
-        }).length || 0;
+        }).length;
 
         // 3. Videos Watched
-        const { count: videosCount } = await supabase.from('video_progress').select('*', { count: 'exact', head: true });
+        const { count: videosCount, error: videosError } = await supabase
+          .from('video_progress')
+          .select('*', { count: 'exact', head: true });
 
         // 4. Games Played
-        const { count: gamesCount } = await supabase.from('game_scores').select('*', { count: 'exact', head: true });
+        const { count: gamesCount, error: gamesError } = await supabase
+          .from('game_scores')
+          .select('*', { count: 'exact', head: true });
 
         setStats({
           successRate,
@@ -91,8 +96,8 @@ const StatisticsPage: React.FC = () => {
           satisfaction,
           newPatients: newPatients || 0,
           formsSent: totalForms,
-          videosWatched: videosCount || 0,
-          gamesPlayed: gamesCount || 0,
+          videosWatched: videosError ? 0 : (videosCount || 0),
+          gamesPlayed: gamesError ? 0 : (gamesCount || 0),
           prevFormsSent: prevForms,
         });
       } catch (error) {

@@ -73,7 +73,7 @@ const EducationPage: React.FC = () => {
 
   const funFacts = [
     {
-      emoji: '🫘',
+      emoji: '🩸',
       factFr: 'Tes reins filtrent environ 180 litres de sang par jour !',
       factAr: 'كليتاك تنقي حوالي 180 لترًا من الدم يوميًا!',
     },
@@ -220,7 +220,7 @@ const EducationPage: React.FC = () => {
             <Card className="card-shadow hover:card-shadow-hover transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">🫘</span>
+                  <span className="text-2xl">🩸</span>
                   {language === 'ar' ? 'ما هي الكلى؟' : 'C\'est quoi les reins ?'}
                 </CardTitle>
               </CardHeader>
