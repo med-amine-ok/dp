@@ -168,7 +168,7 @@ const StatisticsPage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-success/20 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-success/15 flex items-center justify-center shadow-[0_12px_20px_-16px_hsl(var(--success)/0.9)]">
             <Activity className="h-7 w-7 text-success" />
           </div>
           <div>
@@ -184,10 +184,10 @@ const StatisticsPage: React.FC = () => {
         {/* Key Metrics */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {keyMetrics.map((stat, index) => (
-            <Card key={index} className="card-shadow">
+            <Card key={index} className="card-shadow rounded-3xl interactive-lift">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                  <div className={`p-3.5 rounded-2xl ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
                   <div className={`flex items-center gap-1 text-sm ${stat.trend.isPositive ? 'text-success' : 'text-destructive'}`}>
@@ -201,7 +201,7 @@ const StatisticsPage: React.FC = () => {
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{stat.title}</p>
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-foreground">
+                  <span className="text-3xl md:text-4xl font-bold text-foreground leading-none">
                     {stat.displayValue !== undefined ? stat.displayValue : `${stat.value}%`}
                   </span>
                   <Progress value={stat.value} className="flex-1 h-2" />
@@ -212,7 +212,7 @@ const StatisticsPage: React.FC = () => {
         </div>
 
         {/* Summary Statistics */}
-        <Card className="card-shadow">
+        <Card className="card-shadow rounded-3xl">
           <CardHeader>
             <CardTitle className="text-lg">
               {language === 'ar' ? 'ملخص الأداء' : 'Résumé de performance'}
@@ -221,8 +221,8 @@ const StatisticsPage: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {summaryStats.map((item, index) => (
-                <div key={index} className="flex flex-col items-center text-center p-4 bg-muted/50 rounded-xl">
-                  <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center mb-3">
+                <div key={index} className="flex flex-col items-center text-center p-5 bg-muted/45 rounded-2xl border border-border/60">
+                  <div className="w-12 h-12 rounded-2xl bg-background/90 flex items-center justify-center mb-3">
                     <item.icon className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-3xl font-bold text-foreground mb-1">{item.value}</p>
@@ -234,9 +234,9 @@ const StatisticsPage: React.FC = () => {
         </Card>
 
         {/* Informational Card */}
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="bg-primary/5 border-primary/20 rounded-3xl">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
               <Heart className="h-6 w-6 text-primary" />
             </div>
             <div>

@@ -18,7 +18,7 @@ interface Analytics {
   healthFormsThisWeek: number;
 }
 
-const COLORS = ['hsl(213, 56%, 24%)', 'hsl(187, 70%, 60%)', 'hsl(152, 60%, 45%)', 'hsl(38, 92%, 50%)'];
+const COLORS = ['hsl(208 56% 40%)', 'hsl(199 64% 68%)', 'hsl(154 42% 44%)', 'hsl(28 90% 70%)'];
 
 const AdminDashboard: React.FC = () => {
   const { language, t } = useLanguage();
@@ -123,8 +123,8 @@ const AdminDashboard: React.FC = () => {
     <DashboardLayout role="admin">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('admin.welcome')}</h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{t('admin.welcome')}</h1>
           <p className="text-muted-foreground">
             {language === 'ar' ? 'نظرة عامة على النظام' : "Vue d'ensemble du système"}
           </p>
@@ -163,7 +163,7 @@ const AdminDashboard: React.FC = () => {
         {/* Charts Row */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Dialysis Type Pie */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg">
                 {language === 'ar' ? 'أنواع غسيل الكلى' : 'Répartition des types de dialyse'}
@@ -204,7 +204,7 @@ const AdminDashboard: React.FC = () => {
           </Card>
 
           {/* Patient Status Pie */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg">
                 {language === 'ar' ? 'حالة المرضى' : 'État des patients'}
@@ -224,9 +224,9 @@ const AdminDashboard: React.FC = () => {
                       percent > 0 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''
                     }
                   >
-                    <Cell fill="hsl(152, 60%, 45%)" />
-                    <Cell fill="hsl(38, 92%, 50%)" />
-                    <Cell fill="hsl(0, 72%, 51%)" />
+                    <Cell fill="hsl(154 42% 44%)" />
+                    <Cell fill="hsl(28 90% 70%)" />
+                    <Cell fill="hsl(0 66% 55%)" />
                   </Pie>
                   <Tooltip formatter={(v) => [`${v} patients`]} />
                   <Legend />
@@ -239,9 +239,9 @@ const AdminDashboard: React.FC = () => {
         {/* Quick Links */}
         <div className="grid md:grid-cols-3 gap-6">
           <Link to="/admin/users">
-            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer">
+            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
@@ -254,9 +254,9 @@ const AdminDashboard: React.FC = () => {
             </Card>
           </Link>
           <Link to="/admin/statistics">
-            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer">
+            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-success/15 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-success" />
                 </div>
                 <div>
@@ -269,9 +269,9 @@ const AdminDashboard: React.FC = () => {
             </Card>
           </Link>
           <Link to="/admin/monitoring">
-            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer">
+            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-warning/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-warning/15 flex items-center justify-center">
                   <Settings className="h-6 w-6 text-warning" />
                 </div>
                 <div>

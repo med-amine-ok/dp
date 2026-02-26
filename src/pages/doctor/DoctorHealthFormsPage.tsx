@@ -297,9 +297,7 @@ const DoctorHealthFormsPage: React.FC = () => {
               </ScrollArea>
 
               <div className="p-4 bg-muted/10 border-t border-muted/50 text-center">
-                <Button variant="ghost" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary p-0 h-auto">
-                  {language === 'ar' ? 'إدارة جميع المرضى' : 'Gérer tous les patients'}
-                </Button>
+                
               </div>
             </Card>
           </aside>
@@ -322,14 +320,14 @@ const DoctorHealthFormsPage: React.FC = () => {
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-4 border-primary" />
                       </div>
                       <div className="space-y-2">
-                        <h2 className="text-3xl font-black tracking-tight">
+                        <h2 className="text-3xl text-white font-black tracking-tight">
                           {language === 'ar' ? currentPatient.name_ar : currentPatient.name_fr}
                         </h2>
                         <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                           <Badge variant="secondary" className="bg-white/10 text-white border-white/10 backdrop-blur-md rounded-lg px-4 py-1">
                             {currentPatient.age} {language === 'ar' ? 'سنة' : 'ans'}
                           </Badge>
-                          <div className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg border border-white/10">
+                          <div className="px-3 py-1  backdrop-blur-md rounded-lg ">
                             <StatusBadge status={currentPatient.status} />
                           </div>
                         </div>

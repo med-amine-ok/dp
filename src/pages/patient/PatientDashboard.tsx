@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, FileText, MessageCircle, Gamepad2, Heart, Star, UserCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { link } from 'fs/promises';
 
 const PatientDashboard: React.FC = () => {
   const { t, language } = useLanguage();
@@ -104,20 +105,23 @@ const PatientDashboard: React.FC = () => {
     <DashboardLayout role="patient">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Welcome Section */}
-        <div className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-br from-secondary to-accent rounded-2xl p-8 card-shadow">
+        <div className="flex flex-col md:flex-row items-center gap-3 bg-gradient-to-br from-secondary/80 to-accent/70 rounded-3xl p-4 md:p-5 card-shadow border border-border/60">
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {t('patient.welcome')}, {user?.name?.split(' ')[0] || 'Friend'}! 👋
+            <h1 className="text-3xl font-bold text-foreground mb-1">
+              {t('patient.welcome')}, 
+            </h1>
+            <h1 className="text-3xl font-bold text-foreground mb-1">
+              {user?.name?.split('  ') || 'Friend'}! 👋
             </h1>
             <p className="text-lg text-muted-foreground">
               {t('patient.howAreYou')}
             </p>
-            <div className="flex items-center gap-2 mt-4 justify-center md:justify-start">
-              <span className="text-2xl">🌟</span>
+            <div className="flex items-center gap-2 mt-2 justify-center md:justify-start">
+              <span className="text-2xl">⭐</span>
               <span className="text-sm font-medium text-foreground">
                 {language === 'ar'
-                  ? `${stats.stars} نجوم هذا الأسبوع!`
-                  : `${stats.stars} étoiles cette semaine !`}
+                  ? `${stats.stars} نجمة مكتسبة`
+                  : `${stats.stars} étoiles gagnées`}
               </span>
             </div>
           </div>
@@ -127,69 +131,17 @@ const PatientDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Profile Completion Banner */}
-        {/* {profileComplete === false && (
-          <Link to="/patient/profile">
-            <div className="flex items-center justify-between gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-6 py-4 hover:shadow-md transition-all duration-300 hover:scale-[1.005] cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-amber-100 text-amber-600 shrink-0">
-                  <UserCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="font-bold text-amber-800 text-sm">
-                    {language === 'ar' ? '⚠️ أكمل ملفك الشخصي' : '⚠️ Complétez votre profil'}
-                  </p>
-                  <p className="text-amber-700 text-xs mt-0.5">
-                    {language === 'ar'
-                      ? 'أضف عمرك، نوع الغسيل، وحالتك الصحية'
-                      : "Ajoutez votre âge, type de dialyse et état de santé"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-amber-600 font-semibold text-sm shrink-0">
-                {language === 'ar' ? 'أكمل الآن' : 'Compléter'}
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </Link>
-        )} */}
-
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <DashboardCard
-            title={language === 'ar' ? 'الفيديوهات' : 'Vidéos'}
-            value={stats.videos.toString()}
-            subtitle={language === 'ar' ? 'شاهدتها' : 'Regardées'}
-            icon={BookOpen}
-            color="accent"
-          />
-          <DashboardCard
-            title={language === 'ar' ? 'الألعاب' : 'Jeux'}
-            value={stats.games.toString()}
-            subtitle={language === 'ar' ? 'لعبتها' : 'Joués'}
-            icon={Gamepad2}
-            color="warning"
-          />
-          <DashboardCard
-            title={language === 'ar' ? 'النجوم' : 'Étoiles'}
-            value={stats.stars.toString()}
-            subtitle={language === 'ar' ? 'المجموع' : 'Total'}
-            icon={Star}
-            color="primary"
-          />
-        </div> */}
-
         {/* Quick Links */}
         <div>
-          <h2 className="text-xl font-bold text-foreground mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
             {language === 'ar' ? 'روابط سريعة' : 'Accès rapide'}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {quickLinks.map((link) => (
               <Link key={link.path} to={link.path}>
-                <Card className="h-full hover:scale-105 transition-transform duration-200 card-shadow hover:card-shadow-hover cursor-pointer">
+                <Card className="h-full hover:scale-[1.02] transition-all duration-200 card-shadow hover:card-shadow-hover cursor-pointer rounded-3xl interactive-lift">
                   <CardContent className="p-6 text-center">
-                    <div className={`w-14 h-14 mx-auto mb-4 rounded-xl ${link.color} flex items-center justify-center`}>
+                    <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl ${link.color} flex items-center justify-center shadow-[inset_0_1px_0_hsl(0_0%_100%/0.5)]`}>
                       <link.icon className="h-7 w-7" />
                     </div>
                     <h3 className="font-semibold text-foreground mb-1">{link.title}</h3>
@@ -202,7 +154,7 @@ const PatientDashboard: React.FC = () => {
         </div>
 
         {/* Today's Tip */}
-        <Card className="bg-gradient-to-r from-playful-pink/20 to-playful-purple/20 border-none card-shadow">
+        <Card className="bg-gradient-to-r from-playful-pink/20 to-playful-purple/20 border-border/50 card-shadow rounded-3xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">💡</span>

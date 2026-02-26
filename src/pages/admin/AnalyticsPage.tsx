@@ -29,7 +29,7 @@ interface AnalyticsData {
   moodDist: { name: string; value: number }[];
 }
 
-const COLORS = ['hsl(213, 56%, 24%)', 'hsl(187, 70%, 60%)', 'hsl(152, 60%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
+const COLORS = ['hsl(208 56% 40%)', 'hsl(154 42% 44%)', 'hsl(265 52% 74%)', 'hsl(28 90% 70%)', 'hsl(0 66% 55%)'];
 
 const AnalyticsPage: React.FC = () => {
   const { language, t } = useLanguage();
@@ -164,7 +164,7 @@ const AnalyticsPage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shadow-[0_12px_20px_-16px_hsl(var(--primary)/0.9)]">
             <BarChart3 className="h-7 w-7 text-primary" />
           </div>
           <div>
@@ -180,7 +180,7 @@ const AnalyticsPage: React.FC = () => {
         {/* Charts Grid */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Patient Growth */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
@@ -197,14 +197,14 @@ const AnalyticsPage: React.FC = () => {
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
+                      borderRadius: '16px',
                     }}
                   />
                   <Area
                     type="monotone"
                     dataKey="patients"
-                    stroke="hsl(213, 56%, 24%)"
-                    fill="hsl(213, 56%, 24%, 0.2)"
+                    stroke="hsl(208 56% 40%)"
+                    fill="hsl(208 56% 40% / 0.22)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -212,7 +212,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
 
           {/* Satisfaction Trend */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Activity className="h-5 w-5" />
@@ -229,15 +229,15 @@ const AnalyticsPage: React.FC = () => {
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
+                      borderRadius: '16px',
                     }}
                   />
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="hsl(152, 60%, 45%)"
+                    stroke="hsl(154 42% 44%)"
                     strokeWidth={3}
-                    dot={{ fill: 'hsl(152, 60%, 45%)', strokeWidth: 2 }}
+                    dot={{ fill: 'hsl(154 42% 44%)', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -245,7 +245,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
 
           {/* Age Distribution */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -262,17 +262,17 @@ const AnalyticsPage: React.FC = () => {
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
+                      borderRadius: '16px',
                     }}
                   />
-                  <Bar dataKey="count" fill="hsl(187, 70%, 60%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="hsl(199 64% 68%)" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           {/* Patient Satisfaction Pie */}
-          <Card className="card-shadow">
+          <Card className="card-shadow rounded-3xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <PieIcon className="h-5 w-5" />

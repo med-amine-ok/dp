@@ -135,86 +135,92 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-background relative overflow-hidden font-sans">
       {/* Background Shape */}
       <div className="absolute top-0 right-0 w-2/3 h-full z-0 pointer-events-none">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-[#D1F4FA]">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-secondary/60">
           <path d="M50 0 L100 0 L100 100 L40 100 C40 100 10 70 60 50 C90 30 40 10 50 0 Z" />
         </svg>
       </div>
 
+      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-accent/45 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-8 -right-16 h-64 w-64 rounded-full bg-secondary/55 blur-3xl pointer-events-none" />
+
       <div className="relative z-10 container mx-auto px-6 py-4 flex flex-col h-full">
         {/* Header */}
-        <header className="flex justify-between items-center mb-16">
+        <header className="flex justify-between items-center mb-16 pt-2">
           <div className="flex items-center gap-2">
             {/* Logo */}
             <Logo size="md" />
           </div>
 
-          <nav className="flex items-center gap-8 text-primary/80 font-medium text-sm hidden md:flex">
+          {/* <nav className="flex items-center gap-8 text-muted-foreground font-medium text-sm hidden md:flex">
             <a href="#" className="hover:text-primary transition-colors">{t('nav.home')}</a>
             <a href="#" className="hover:text-primary transition-colors">{t('nav.education')}</a>
             <a href="#" className="hover:text-primary transition-colors">{t('nav.games')}</a>
             <a href="#" className="text-primary font-bold">{t('auth.loginWithGoogle')}</a>
-          </nav>
+          </nav> */}
         </header>
 
         {/* content */}
-        <main className="flex-1 flex flex-col md:flex-row items-center gap-12">
-          {/* Left Column */}
-          <div className="flex-1 space-y-8">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-[#0D4E80] leading-tight">
+        <main className="flex-1 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          {/* Welcome */}
+          <div className="order-1 md:order-1 flex-1 space-y-8">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-foreground leading-tight tracking-tight">
               {t('auth.welcome')}
             </h1>
-            <p className="text-gray-600 text-lg max-w-lg">
-              {t('auth.subtitle')}
-            </p>
 
-            {/* Website Info / Features */}
-            <div className="grid gap-6 mt-12 bg-white/40 p-6 rounded-2xl backdrop-blur-sm border border-white/50 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-blue-100 text-blue-600 shrink-0">
-                  <Activity className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-[#0D4E80]">{t('auth.feature1.title')}</h3>
-                  <p className="text-gray-600 text-sm">{t('auth.feature1.desc')}</p>
-                </div>
-              </div>
+            <div className="hidden md:block space-y-8">
+              <p className="text-muted-foreground text-lg max-w-lg leading-relaxed">
+                {t('auth.subtitle')}
+              </p>
 
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-green-100 text-green-600 shrink-0">
-                  <MessageCircle className="w-6 h-6" />
+              {/* Website Info / Features */}
+              <div className="grid gap-6 bg-card/75 p-7 rounded-3xl backdrop-blur-md border border-border/70 card-shadow">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-2xl bg-primary/12 text-primary shrink-0">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">{t('auth.feature1.title')}</h3>
+                    <p className="text-muted-foreground text-sm">{t('auth.feature1.desc')}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-[#0D4E80]">{t('auth.feature2.title')}</h3>
-                  <p className="text-gray-600 text-sm">{t('auth.feature2.desc')}</p>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-purple-100 text-purple-600 shrink-0">
-                  <GraduationCap className="w-6 h-6" />
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-2xl bg-secondary text-success shrink-0">
+                    <MessageCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">{t('auth.feature2.title')}</h3>
+                    <p className="text-muted-foreground text-sm">{t('auth.feature2.desc')}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-[#0D4E80]">{t('auth.feature3.title')}</h3>
-                  <p className="text-gray-600 text-sm">{t('auth.feature3.desc')}</p>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-2xl bg-accent text-accent-foreground shrink-0">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">{t('auth.feature3.title')}</h3>
+                    <p className="text-muted-foreground text-sm">{t('auth.feature3.desc')}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Login Form */}
-          <div className="flex-1 w-full max-w-md ms-auto me-12 lg:me-24">
+          {/* Login Form */}
+          <div className="order-2 md:order-2 flex-1 w-full max-w-md md:ms-auto md:me-12 lg:me-24">
             <div className="mb-6">
-              <h2 className="text-[#0D4E80] text-xl font-bold uppercase tracking-wider mb-4">
+              <h2 className="text-foreground text-xl font-bold uppercase tracking-wider mb-4">
                 {t('auth.loginWithGoogle')}
               </h2>
-              <div className="space-y-4 bg-white/50 p-6 rounded-xl backdrop-blur-sm border border-white/60">
+              <div className="space-y-4 bg-card/70 p-6 rounded-3xl backdrop-blur-md border border-border/70 card-shadow">
                 <Button
                   onClick={handleGoogleLogin}
                   variant="outline"
-                  className="w-full h-16 bg-white hover:bg-gray-50 border-2 border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-4 group"
+                  className="w-full h-16 bg-card hover:bg-card border border-border rounded-2xl shadow-[0_10px_18px_-14px_hsl(var(--primary)/0.5)] hover:shadow-[0_14px_24px_-14px_hsl(var(--primary)/0.6)] transition-all flex items-center justify-center gap-4 group"
                 >
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -236,8 +242,48 @@ const LoginPage: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <span className="text-lg font-medium text-gray-700">Google</span>
+                  <span className="text-lg font-medium text-foreground">Google</span>
                 </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Remaining Content */}
+          <div className="order-3 md:hidden space-y-8">
+            <p className="text-muted-foreground text-lg max-w-lg leading-relaxed">
+              {t('auth.subtitle')}
+            </p>
+
+            {/* Website Info / Features */}
+            <div className="grid gap-6 bg-card/75 p-7 rounded-3xl backdrop-blur-md border border-border/70 card-shadow">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-primary/12 text-primary shrink-0">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-foreground">{t('auth.feature1.title')}</h3>
+                  <p className="text-muted-foreground text-sm">{t('auth.feature1.desc')}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-secondary text-success shrink-0">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-foreground">{t('auth.feature2.title')}</h3>
+                  <p className="text-muted-foreground text-sm">{t('auth.feature2.desc')}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-accent text-accent-foreground shrink-0">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-foreground">{t('auth.feature3.title')}</h3>
+                  <p className="text-muted-foreground text-sm">{t('auth.feature3.desc')}</p>
+                </div>
               </div>
             </div>
           </div>

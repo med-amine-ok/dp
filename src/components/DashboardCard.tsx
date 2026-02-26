@@ -33,18 +33,18 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   };
 
   return (
-    <Card className={cn('overflow-hidden card-shadow hover:card-shadow-hover transition-shadow', className)}>
-      <CardContent className="p-6">
+    <Card className={cn('overflow-hidden card-shadow hover:card-shadow-hover transition-all duration-200 interactive-lift', className)}>
+      <CardContent className="p-6 md:p-7">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-            <p className="text-3xl font-bold text-foreground">{value}</p>
+            <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground leading-none">{value}</p>
             {subtitle && (
-              <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+              <p className="text-sm text-muted-foreground mt-2">{subtitle}</p>
             )}
             {trend && (
               <div className={cn(
-                'flex items-center gap-1 mt-2 text-sm font-medium',
+                'flex items-center gap-1.5 mt-3 text-sm font-semibold',
                 trend.isPositive ? 'text-success' : 'text-destructive'
               )}>
                 <span>{trend.isPositive ? '↑' : '↓'}</span>
@@ -52,7 +52,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
               </div>
             )}
           </div>
-          <div className={cn('p-3 rounded-xl', colorClasses[color])}>
+          <div className={cn('p-3.5 rounded-2xl shadow-[inset_0_1px_0_hsl(0_0%_100%/0.45)]', colorClasses[color])}>
             <Icon className="h-6 w-6" />
           </div>
         </div>

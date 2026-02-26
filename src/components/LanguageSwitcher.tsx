@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Check, ChevronDown } from 'lucide-react';
 
@@ -20,14 +21,38 @@ const LANGUAGES = [
 const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left?: number; right?: number }>({
+    top: 0,
+    right: 0,
+  });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const current = LANGUAGES.find(l => l.code === language)!;
+  const isRTL = language === 'ar';
+
+  // Compute position whenever opening
+  const handleToggle = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      if (isRTL) {
+        // Arabic: button is on the left → anchor dropdown from left
+        setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+      } else {
+        // French: button is on the right → anchor dropdown from right
+        setDropdownPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+      }
+    }
+    setOpen(prev => !prev);
+  };
 
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -35,20 +60,84 @@ const LanguageSwitcher: React.FC = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Close on scroll/resize
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, []);
+
   const handleSelect = (code: typeof LANGUAGES[number]['code']) => {
     setLanguage(code);
     setOpen(false);
   };
 
+  const dropdown = (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: dropdownPos.top,
+        ...(isRTL ? { left: dropdownPos.left } : { right: dropdownPos.right }),
+        zIndex: 99999,
+      }}
+      className={`w-56 rounded-2xl border border-border/70 overflow-hidden
+        bg-card/95 backdrop-blur-xl card-shadow
+        transition-all duration-200 origin-top-left
+        ${open ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}
+    >
+      {/* Options */}
+      <div className="p-1.5 flex flex-col gap-0.5">
+        {LANGUAGES.map(({ code, flag, label, sublabel }) => {
+          const isActive = language === code;
+          return (
+            <button
+              key={code}
+              onClick={() => handleSelect(code)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group
+                ${isActive
+                  ? 'bg-accent/65 border border-border/70'
+                  : 'hover:bg-muted/65 border border-transparent'
+                }`}
+            >
+              <span className={`text-2xl leading-none transition-transform duration-200 ${!isActive && 'group-hover:scale-110'}`}>
+                {flag}
+              </span>
+              <div className="flex flex-col flex-1 leading-none gap-0.5">
+                <span className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                  {label}
+                </span>
+                <span className="text-[10px] text-muted-foreground/60 tracking-wide uppercase">
+                  {sublabel}
+                </span>
+              </div>
+              {isActive && (
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/95 shadow-[0_8px_14px_-10px_hsl(var(--primary)/0.9)]">
+                  <Check className="h-3 w-3 text-primary-foreground stroke-[3]" />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+    </div>
+  );
+
   return (
-    <div ref={ref} className="relative">
+    <>
       {/* Trigger button */}
       <button
-        onClick={() => setOpen(prev => !prev)}
-        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border transition-all duration-200 select-none
+        ref={triggerRef}
+        onClick={handleToggle}
+        className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border transition-all duration-200 select-none
           ${open
-            ? 'bg-white border-blue-300 shadow-lg shadow-blue-100 dark:bg-zinc-900 dark:border-blue-700 dark:shadow-blue-900/30'
-            : 'bg-white/70 border-border/50 hover:bg-white hover:border-border hover:shadow-md dark:bg-zinc-900/70 dark:hover:bg-zinc-900'
+            ? 'bg-card border-border card-shadow'
+            : 'bg-card/70 border-border/60 hover:bg-card hover:border-border/90 hover:card-shadow'
           } backdrop-blur-sm`}
       >
         <span className="text-xl leading-none">{current.flag}</span>
@@ -61,65 +150,9 @@ const LanguageSwitcher: React.FC = () => {
         />
       </button>
 
-      {/* Dropdown */}
-      <div
-        className={`absolute right-0 mt-2 w-52 rounded-2xl border border-border/40 overflow-hidden z-50
-          bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl
-          shadow-xl shadow-black/10 dark:shadow-black/40
-          transition-all duration-200 origin-top-right
-          ${open ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}
-      >
-        {/* Header */}
-        <div className="px-4 py-2.5 border-b border-border/30 bg-muted/30">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Select Language
-          </p>
-        </div>
-
-        {/* Options */}
-        <div className="p-1.5 flex flex-col gap-0.5">
-          {LANGUAGES.map(({ code, flag, label, sublabel }) => {
-            const isActive = language === code;
-            return (
-              <button
-                key={code}
-                onClick={() => handleSelect(code)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group
-                  ${isActive
-                    ? 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-300/40 dark:border-blue-700/40'
-                    : 'hover:bg-muted/60 border border-transparent'
-                  }`}
-              >
-                {/* Flag */}
-                <span className={`text-2xl leading-none transition-transform duration-200 ${!isActive && 'group-hover:scale-110'}`}>
-                  {flag}
-                </span>
-
-                {/* Text */}
-                <div className="flex flex-col flex-1 leading-none gap-0.5">
-                  <span className={`text-sm font-semibold ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
-                    {label}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/60 tracking-wide uppercase">
-                    {sublabel}
-                  </span>
-                </div>
-
-                {/* Active check */}
-                {isActive && (
-                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 shadow-sm shadow-blue-400/40">
-                    <Check className="h-3 w-3 text-white stroke-[3]" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Footer accent */}
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
-      </div>
-    </div>
+      {/* Dropdown rendered into document.body to escape all stacking contexts */}
+      {ReactDOM.createPortal(dropdown, document.body)}
+    </>
   );
 };
 

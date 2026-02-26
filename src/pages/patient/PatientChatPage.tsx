@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Send, Check, CheckCheck, Smile } from 'lucide-react';
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { supabase } from '@/lib/supabase';
 
 interface Message {
@@ -37,7 +39,9 @@ const PatientChatPage: React.FC = () => {
   const [assignedDoctorId, setAssignedDoctorId] = useState<string | null>(null);
   const [doctorInfo, setDoctorInfo] = useState<DoctorInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastAutoScrolledMessageIdRef = useRef<string | null>(null);
 
   // Fetch Patient & Doctor Info
   useEffect(() => {
@@ -128,7 +132,23 @@ const PatientChatPage: React.FC = () => {
           timestamp: msg.created_at,
           status: msg.status,
         }));
-        setMessages(mapped);
+        setMessages((prev) => {
+          const hasSameContent =
+            prev.length === mapped.length &&
+            prev.every((item, index) => {
+              const nextItem = mapped[index];
+              return (
+                nextItem &&
+                item.id === nextItem.id &&
+                item.sender === nextItem.sender &&
+                item.message === nextItem.message &&
+                item.timestamp === nextItem.timestamp &&
+                item.status === nextItem.status
+              );
+            });
+
+          return hasSameContent ? prev : mapped;
+        });
       }
     };
 
@@ -184,8 +204,12 @@ const PatientChatPage: React.FC = () => {
 
   // Auto-scroll to bottom
   useEffect(() => {
+    const latestMessage = messages[messages.length - 1];
+    if (!latestMessage || lastAutoScrolledMessageIdRef.current === latestMessage.id) return;
+
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      lastAutoScrolledMessageIdRef.current = latestMessage.id;
     }
   }, [messages]);
 
@@ -251,12 +275,45 @@ const PatientChatPage: React.FC = () => {
   };
 
   return (
-    <DashboardLayout role="patient">
-      <div className="w-full h-[calc(100vh-7rem)] flex flex-col gap-0 max-w-[1600px] mx-auto overflow-hidden">
+    <DashboardLayout
+      role="patient"
+      headerContent={
+        assignedDoctorId ? (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative">
+              <Avatar className="w-10 h-10 border-2 border-primary/20 shadow-[0_8px_18px_-14px_hsl(var(--primary)/0.85)]">
+                {doctorInfo?.avatar_url ? (
+                  <img src={doctorInfo.avatar_url} alt={doctorInfo.name_fr} className="w-full h-full object-cover" />
+                ) : (
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+                    {doctorInfo?.name_fr?.charAt(0).toUpperCase() || 'D'}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success rounded-full border-2 border-background animate-pulse" />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm md:text-base font-semibold leading-tight text-foreground truncate">
+                {doctorInfo ? (language === 'ar' ? doctorInfo.name_ar : doctorInfo.name_fr) : 'Doctor'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {doctorInfo?.specialization || t('chat.title')}
+              </p>
+            </div>
+
+            <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full bg-success/15 text-success text-[11px] font-semibold whitespace-nowrap">
+              {language === 'ar' ? 'متصل' : 'En ligne'}
+            </span>
+          </div>
+        ) : null
+      }
+    >
+      <div className="w-full h-full min-h-0 flex flex-col gap-3 max-w-[1600px] mx-auto overflow-hidden">
         {!assignedDoctorId ? (
           // No Doctor Assigned
           <div className="space-y-6 overflow-auto">
-            <Card className="border-2 border-dashed border-warning/50 bg-warning/5">
+            <Card className="border-2 border-dashed border-warning/40 bg-warning/5 rounded-3xl">
               <CardHeader>
                 <CardTitle className="text-warning">
                   {language === 'ar' ? 'لم يتم تعيين طبيب' : 'Pas de médecin assigné'}
@@ -276,43 +333,11 @@ const PatientChatPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Modern Header */}
-            <Card className="border-none shadow-sm bg-background/80 backdrop-blur-sm flex-shrink-0">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar className="w-12 h-12 border-2 border-primary/20">
-                      {doctorInfo?.avatar_url ? (
-                        <img src={doctorInfo.avatar_url} alt={doctorInfo.name_fr} className="w-full h-full object-cover" />
-                      ) : (
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
-                          {doctorInfo?.name_fr?.charAt(0).toUpperCase() || 'D'}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
-                  </div>
-
-                  <div>
-                    <h1 className="text-xl font-bold flex items-center gap-2">
-                      {doctorInfo ? (language === 'ar' ? doctorInfo.name_ar : doctorInfo.name_fr) : 'Doctor'}
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-                        {language === 'ar' ? 'متصل' : 'En ligne'}
-                      </span>
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                      {doctorInfo?.specialization || t('chat.title')}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Chat Area */}
-            <Card className="flex-1 flex flex-col border-none shadow-md overflow-hidden bg-background/50 backdrop-blur-sm">
+            <Card className="flex-1 flex flex-col border border-border/70 card-shadow overflow-hidden bg-card/70 backdrop-blur-md rounded-3xl">
               {/* Messages - Only scrollable area */}
               <ScrollArea className="flex-1">
-                <div className="p-6 space-y-6">
+                <div className="p-6 md:p-7 space-y-6 medical-illustration-soft">
                   {messages.map((msg, idx) => {
                     const isUser = msg.sender === 'patient';
                     const showAvatar = !isUser && (idx === 0 || messages[idx - 1].sender === 'patient');
@@ -343,10 +368,10 @@ const PatientChatPage: React.FC = () => {
 
                         <div
                           className={cn(
-                            'max-w-[70%] rounded-2xl px-5 py-3 shadow-sm relative group',
+                            'max-w-[72%] rounded-3xl px-5 py-3.5 shadow-sm relative group border transition-all duration-200',
                             isUser
-                              ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-sm'
-                              : 'bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700 text-foreground rounded-bl-sm'
+                              ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-md border-primary/30 shadow-[0_14px_24px_-18px_hsl(var(--primary)/0.95)]'
+                              : 'bg-card border-border/75 text-foreground rounded-bl-md'
                           )}
                         >
                           <p className="text-sm leading-relaxed">{msg.message}</p>
@@ -371,16 +396,41 @@ const PatientChatPage: React.FC = () => {
               </ScrollArea>
 
               {/* Quick Responses & Input - Fixed at bottom */}
-              <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border/50 flex-shrink-0">
+              <div className="p-4 bg-card/85 backdrop-blur-lg border-t border-border/60 flex-shrink-0">
                 {/* Input Bar */}
-                <div className="flex items-end gap-3 bg-secondary/30 p-2 rounded-[24px] border border-border/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
-                  >
-                    <Smile className="h-5 w-5" />
-                  </Button>
+                <div className="flex items-end gap-3 bg-background/80 p-2 rounded-[24px] border border-border/65 focus-within:ring-2 focus-within:ring-primary/25 transition-all card-shadow">
+                  <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          'h-10 w-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors',
+                          showEmojiPicker && 'text-primary bg-primary/10'
+                        )}
+                      >
+                        <Smile className="h-5 w-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="top"
+                      align="start"
+                      className="p-0 border-none shadow-2xl w-auto"
+                      sideOffset={12}
+                    >
+                      <EmojiPicker
+                        onEmojiClick={(emojiData: EmojiClickData) => {
+                          setNewMessage(prev => prev + emojiData.emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        theme={Theme.LIGHT}
+                        searchPlaceholder={language === 'ar' ? 'ابحث عن إيموجي...' : 'Chercher un emoji...'}
+                        skinTonesDisabled
+                        height={380}
+                        width={320}
+                      />
+                    </PopoverContent>
+                  </Popover>
 
                   <Input
                     placeholder={t('chat.placeholder')}
@@ -397,7 +447,7 @@ const PatientChatPage: React.FC = () => {
                     className={cn(
                       "h-10 w-10 rounded-full transition-all duration-200 shadow-sm",
                       newMessage.trim()
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/92 hover:scale-105"
                         : "bg-muted text-muted-foreground"
                     )}
                   >

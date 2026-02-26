@@ -210,7 +210,7 @@ const PatientProfilePage: React.FC = () => {
                         </div>
 
                         {/* Completion ring */}
-                        <div className="shrink-0 flex flex-col items-center">
+                        {/* <div className="shrink-0 flex flex-col items-center">
                             <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
                                 <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="8" />
                                 <circle
@@ -225,7 +225,7 @@ const PatientProfilePage: React.FC = () => {
                             <span className="text-white font-bold text-sm mt-1">
                                 {isAr ? 'مكتمل' : 'Complété'}
                             </span>
-                        </div>
+                        </div> */}
                     </div>
 
                     {/* Progress bar */}

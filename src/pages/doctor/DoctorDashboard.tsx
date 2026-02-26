@@ -107,8 +107,8 @@ const DoctorDashboard: React.FC = () => {
     <DashboardLayout role="doctor">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
             {t('doctor.welcome')}
           </h1>
           <p className="text-muted-foreground">
@@ -145,7 +145,7 @@ const DoctorDashboard: React.FC = () => {
 
         {/* Critical Alerts */}
         {criticalPatients.length > 0 && (
-          <Card className="border-destructive/50 bg-destructive/5 card-shadow">
+          <Card className="border-destructive/40 bg-destructive/5 card-shadow rounded-3xl">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
@@ -155,7 +155,7 @@ const DoctorDashboard: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 {criticalPatients.map((patient) => (
-                  <div key={patient.id} className="flex items-center justify-between p-3 bg-card rounded-lg">
+                  <div key={patient.id} className="flex items-center justify-between p-3.5 bg-card/90 rounded-2xl border border-border/60">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
                         <span className="font-bold text-destructive">
@@ -177,7 +177,7 @@ const DoctorDashboard: React.FC = () => {
         )}
 
         {/* Patients List */}
-        <Card className="card-shadow">
+        <Card className="card-shadow rounded-3xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">
               {language === 'ar' ? 'المرضى المعيّنون' : 'Patients assignés'}

@@ -90,7 +90,7 @@ export default {
         "2xl": "calc(var(--radius) + 8px)",
       },
       fontFamily: {
-        sans: ["Nunito", "Cairo", "system-ui", "sans-serif"],
+        sans: ["Inter", "Poppins", "Nunito", "Cairo", "system-ui", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

@@ -31,9 +31,10 @@ interface NavItem {
 interface DashboardLayoutProps {
   children: React.ReactNode;
   role: 'patient' | 'doctor' | 'admin';
+  headerContent?: React.ReactNode;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role, headerContent }) => {
   const { t, isRTL } = useLanguage();
   const { logout, user, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -62,7 +63,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           { key: 'nav.healthForm', icon: FileText, path: '/patient/health-form' },
           { key: 'nav.chat', icon: MessageCircle, path: '/patient/chat' },
           { key: 'nav.games', icon: Gamepad2, path: '/patient/games' },
-          { key: 'nav.profile', icon: User, path: '/patient/profile' },
         ];
       // Note: Sessions nav item removed
       case 'doctor':
@@ -112,7 +112,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
         variant="ghost"
         size="icon"
         className={cn(
-          'fixed top-4 z-50 lg:hidden',
+          'fixed top-4 z-50 lg:hidden bg-card/85 backdrop-blur-md border border-border/70 card-shadow',
           isRTL ? 'right-4' : 'left-4'
         )}
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -123,19 +123,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 inset-y-0 z-40 w-64 bg-sidebar transition-transform duration-300 lg:translate-x-0 flex flex-col h-screen',
+          'fixed top-0 inset-y-0 z-40 w-72 bg-sidebar/95 border-r border-sidebar-border transition-transform duration-300 lg:translate-x-0 flex flex-col h-screen backdrop-blur-xl',
           isRTL ? 'right-0' : 'left-0',
           sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
         )}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-6 border-b border-sidebar-border/80">
           <Logo size="md" />
-          <p className="text-xs text-sidebar-foreground/70 mt-1 pl-10">{getRoleTitle()}</p>
+          <p className="text-xs text-sidebar-foreground/70 mt-1 pl-10 tracking-wide">{getRoleTitle()}</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2.5">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -143,10 +143,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
               end={item.path === `/patient` || item.path === '/doctor' || item.path === '/admin'}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                  'flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 interactive-lift border border-transparent',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                    : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                    ? 'bg-sidebar-accent text-sidebar-foreground font-semibold border-sidebar-border/70 shadow-[0_10px_18px_-14px_hsl(var(--primary)/0.8)]'
+                    : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:border-sidebar-border/60'
                 )
               }
               onClick={() => setSidebarOpen(false)}
@@ -158,10 +158,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
         </nav>
 
         {/* Bottom Section */}
-        <div className="p-4 border-t border-sidebar-border space-y-2">
+        <div className="p-4 border-t border-sidebar-border/80 space-y-2.5">
           <button
             onClick={() => { if (role === 'patient') { navigate('/patient/profile'); setSidebarOpen(false); } }}
-            className={`flex items-center gap-3 px-4 py-2 w-full rounded-xl transition-all duration-200 ${role === 'patient' ? 'hover:bg-sidebar-accent/60 cursor-pointer' : 'cursor-default'
+            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-2xl transition-all duration-200 border border-transparent ${role === 'patient' ? 'hover:bg-sidebar-accent/70 hover:border-sidebar-border/60 cursor-pointer' : 'cursor-default'
               }`}
           >
             {user?.avatar ? (
@@ -185,7 +185,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
           </button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10"
+            className="w-full justify-start gap-3 text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10 rounded-2xl"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
@@ -197,20 +197,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-slate-900/35 backdrop-blur-[1px] z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className={cn('flex-1 flex flex-col h-screen overflow-hidden', isRTL ? 'lg:mr-64' : 'lg:ml-64')}>
+      <main className={cn('flex-1 flex flex-col h-screen overflow-hidden', isRTL ? 'lg:mr-72' : 'lg:ml-72')}>
         {/* Top Bar */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-end px-6 gap-4 flex-shrink-0">
-          <LanguageSwitcher />
+        <header dir="ltr" className="h-20 bg-card/75 border-b border-border/75 backdrop-blur-md flex items-center px-5 md:px-8 gap-4 flex-shrink-0">
+          {isRTL ? (
+            <>
+              <LanguageSwitcher />
+              {headerContent && (
+                <div className="flex min-w-0 items-center ml-auto">
+                  {headerContent}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {headerContent && (
+                <div className="flex min-w-0 items-center">
+                  {headerContent}
+                </div>
+              )}
+              <div className="ml-auto">
+                <LanguageSwitcher />
+              </div>
+            </>
+          )}
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-5 md:p-8 overflow-auto min-h-0">
           {children}
         </div>
       </main>

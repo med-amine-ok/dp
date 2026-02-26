@@ -15,32 +15,32 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className }) => {
     active: {
       labelFr: 'Actif',
       labelAr: 'نشط',
-      className: 'bg-success/20 text-success border-success/30',
+      className: 'bg-success/10 text-success border-success/30',
     },
     recovering: {
       labelFr: 'En récupération',
       labelAr: 'في التعافي',
-      className: 'bg-warning/20 text-warning border-warning/30',
+      className: 'bg-warning/10 text-warning border-warning/30',
     },
     critical: {
       labelFr: 'Critique',
       labelAr: 'حرج',
-      className: 'bg-destructive/20 text-destructive border-destructive/30',
+      className: 'bg-destructive/10 text-destructive border-destructive/30',
     },
     completed: {
       labelFr: 'Terminé',
       labelAr: 'مكتمل',
-      className: 'bg-success/20 text-success border-success/30',
+      className: 'bg-success/10 text-success border-success/30',
     },
     scheduled: {
       labelFr: 'Planifié',
       labelAr: 'مجدول',
-      className: 'bg-primary/20 text-primary border-primary/30',
+      className: 'bg-primary/10 text-primary border-primary/30',
     },
     missed: {
       labelFr: 'Manqué',
       labelAr: 'فائت',
-      className: 'bg-destructive/20 text-destructive border-destructive/30',
+      className: 'bg-destructive/10 text-destructive border-destructive/30',
     },
   };
 
