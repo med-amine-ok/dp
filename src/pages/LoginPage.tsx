@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import FloatingBubbles from '@/components/FloatingBubbles';
 import KidneyMascot from '@/components/KidneyMascot';
 import { Logo } from '@/components/Logo';
-import { User, Stethoscope, Shield, Activity, MessageCircle, GraduationCap } from 'lucide-react';
+import { User, Stethoscope, Activity, MessageCircle, GraduationCap } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const { t, isRTL } = useLanguage();
@@ -36,15 +36,13 @@ const LoginPage: React.FC = () => {
     login();
   };
 
-  const handleRoleSelect = async (role: 'patient' | 'doctor' | 'admin') => {
+  const handleRoleSelect = async (role: 'patient' | 'doctor') => {
     try {
       await selectRole(role);
       if (role === 'patient') {
         navigate('/patient');
       } else if (role === 'doctor') {
         navigate('/doctor');
-      } else {
-        navigate('/admin');
       }
     } catch (error) {
       console.error('Role selection failed:', error);
@@ -73,7 +71,7 @@ const LoginPage: React.FC = () => {
               </h1>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {/* Patient Card */}
               <Card
                 className="cursor-pointer group hover:scale-105 transition-all duration-300 card-shadow hover:card-shadow-hover border-2 border-transparent hover:border-playful-pink"
@@ -106,24 +104,6 @@ const LoginPage: React.FC = () => {
                   </h3>
                   <p className="text-muted-foreground text-sm">
                     {t('auth.doctorDesc')}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Admin Card */}
-              <Card
-                className="cursor-pointer group hover:scale-105 transition-all duration-300 card-shadow hover:card-shadow-hover border-2 border-transparent hover:border-playful-purple"
-                onClick={() => handleRoleSelect('admin')}
-              >
-                <CardContent className="p-8 text-center">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-playful-purple/20 flex items-center justify-center group-hover:animate-bounce-gentle">
-                    <Shield className="w-10 h-10 text-playful-purple" />
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">
-                    {t('auth.admin')}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t('auth.adminDesc')}
                   </p>
                 </CardContent>
               </Card>

@@ -4,6 +4,12 @@ import { Session } from '@supabase/supabase-js';
 
 type UserRole = 'patient' | 'doctor' | 'admin' | null;
 
+const ADMIN_EMAILS = new Set([
+  'meddahnaima2005@gmail.com',
+  'sarahboualili17@gmail.com',
+  'ouldkhaoua.pro@gmail.com',
+]);
+
 interface User {
   id: string;
   name: string;
@@ -80,14 +86,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
-      // 3. Fetch User Role
-      const { data: userRole } = await supabase
+      // 3. Fetch User Roles
+      const { data: userRoles } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .maybeSingle();
+        .order('role');
 
-      const role = userRole ? (userRole.role as UserRole) : null;
+      const emailAddress = (email || '').toLowerCase();
+      const isAdminEmail = ADMIN_EMAILS.has(emailAddress);
+      const hasAdminRole = (userRoles || []).some(({ role }) => role === 'admin');
+      const firstRole = userRoles?.[0]?.role as UserRole | undefined;
+      const role = isAdminEmail || hasAdminRole ? 'admin' : (firstRole || null);
+
+      if (isAdminEmail && !hasAdminRole) {
+        const { error: adminRoleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'admin' });
+
+        if (adminRoleError && adminRoleError.code !== '23505') {
+          console.error('Error assigning admin role:', adminRoleError);
+        }
+      }
 
       // Determine name (prefer French, fallback to Arabic or email)
       const name = profile
@@ -137,6 +157,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const selectRole = async (role: UserRole) => {
     if (!user || !role) return;
+
+    if (role === 'admin' && !ADMIN_EMAILS.has(user.email.toLowerCase())) {
+      throw new Error('Admin access is restricted to approved email addresses.');
+    }
 
     // Optimistic update
     const previousRole = user.role;
