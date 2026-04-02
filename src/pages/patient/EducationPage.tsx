@@ -2,9 +2,9 @@ import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Clock, CheckCircle, BookOpen, Sparkles, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,16 +17,53 @@ interface Video {
   description_ar: string;
   duration: string;
   category: 'dialysis' | 'hygiene' | 'treatment';
-  thumbnail_url: string;
+  thumbnail_url?: string | null;
   video_url: string;
   progress?: number;
 }
+
+const DEFAULT_VIDEO_THUMBNAIL = '/default-video-thumbnail.svg';
+
+const getYouTubeEmbedUrl = (url: string) => {
+  if (!url) return '';
+
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.hostname.includes('youtu.be')) {
+      const videoId = parsedUrl.pathname.slice(1);
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+    }
+
+    if (parsedUrl.hostname.includes('youtube.com')) {
+      if (parsedUrl.pathname.includes('/watch')) {
+        const videoId = parsedUrl.searchParams.get('v');
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+      }
+
+      if (parsedUrl.pathname.includes('/shorts/')) {
+        const videoId = parsedUrl.pathname.split('/shorts/')[1]?.split('/')[0];
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+      }
+
+      if (parsedUrl.pathname.includes('/embed/')) {
+        return url;
+      }
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+};
 
 const EducationPage: React.FC = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const [videos, setVideos] = React.useState<Video[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [selectedVideo, setSelectedVideo] = React.useState<Video | null>(null);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     const fetchVideos = async () => {
@@ -34,7 +71,7 @@ const EducationPage: React.FC = () => {
         // Fetch all videos
         const { data: videosData, error: videosError } = await supabase
           .from('videos')
-          .select('*');
+          .select('id, title_fr, title_ar, description_fr, description_ar, duration, category, thumbnail_url, video_url');
 
         if (videosError) throw videosError;
 
@@ -55,7 +92,7 @@ const EducationPage: React.FC = () => {
 
         // Combine data
         if (videosData) {
-          const formattedVideos = videosData.map((v: any) => ({
+          const formattedVideos = videosData.map((v: Video) => ({
             ...v,
             progress: progressMap[v.id] || 0
           }));
@@ -115,6 +152,23 @@ const EducationPage: React.FC = () => {
     }
   };
 
+  const handleOpenVideo = (video: Video) => {
+    setSelectedVideo(video);
+    setIsVideoDialogOpen(true);
+  };
+
+  const handleVideoDialogChange = (open: boolean) => {
+    setIsVideoDialogOpen(open);
+    if (!open) {
+      setSelectedVideo(null);
+    }
+  };
+
+  const selectedVideoEmbedUrl = React.useMemo(
+    () => getYouTubeEmbedUrl(selectedVideo?.video_url || ''),
+    [selectedVideo]
+  );
+
   return (
     <DashboardLayout role="patient">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -146,9 +200,29 @@ const EducationPage: React.FC = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {videos.map((video) => (
-                <Card key={video.id} className="overflow-hidden card-shadow hover:card-shadow-hover transition-all group cursor-pointer">
+                <Card
+                  key={video.id}
+                  className="overflow-hidden card-shadow hover:card-shadow-hover transition-all group cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenVideo(video)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleOpenVideo(video);
+                    }
+                  }}
+                >
                   {/* Thumbnail */}
-                  <div className="relative h-40 bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                  <div className="relative h-40 flex items-center justify-center">
+                    <img
+                      src={video.thumbnail_url || DEFAULT_VIDEO_THUMBNAIL}
+                      alt={language === 'ar' ? video.title_ar : video.title_fr}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/25" />
                     <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Play className="h-8 w-8 text-white fill-white" />
                     </div>
@@ -189,6 +263,40 @@ const EducationPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        <Dialog open={isVideoDialogOpen} onOpenChange={handleVideoDialogChange}>
+          <DialogContent className="max-w-4xl p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>
+                {language === 'ar'
+                  ? selectedVideo?.title_ar || ''
+                  : selectedVideo?.title_fr || ''}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="w-full overflow-hidden rounded-lg bg-black">
+              <div className="relative w-full pt-[56.25%]">
+                {selectedVideoEmbedUrl ? (
+                  <iframe
+                    src={`${selectedVideoEmbedUrl}?autoplay=1&rel=0&modestbranding=1`}
+                    title={language === 'ar' ? selectedVideo?.title_ar : selectedVideo?.title_fr}
+                    className="absolute inset-0 h-full w-full"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-white/80 px-4 text-center">
+                    {language === 'ar'
+                      ? 'رابط الفيديو غير صالح. يرجى التحقق من رابط يوتيوب.'
+                      : 'Lien video invalide. Verifie le lien YouTube.'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Fun Facts */}
         <div>
