@@ -130,16 +130,57 @@ const UserManagementPage: React.FC = () => {
   };
 
   const performDelete = async (id: string, type: 'patient' | 'doctor') => {
-    const table = type === 'patient' ? 'patients' : 'doctors';
     try {
-      const { error } = await supabase.from(table).delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await supabase.rpc('admin_delete_app_user', {
+        target_id: id,
+        target_type: type,
+      });
+
+      if (error && error.message?.includes('Could not find the function public.admin_delete_app_user')) {
+        const table = type === 'patient' ? 'patients' : 'doctors';
+
+        const { data: userRecord, error: userRecordError } = await supabase
+          .from(table)
+          .select('user_id')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (userRecordError) throw userRecordError;
+
+        const linkedUserId = userRecord?.user_id ?? null;
+
+        if (linkedUserId) {
+          const { error: rolesDeleteError } = await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', linkedUserId);
+          if (rolesDeleteError) throw rolesDeleteError;
+
+          const { error: profileDeleteError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('user_id', linkedUserId);
+          if (profileDeleteError) throw profileDeleteError;
+        }
+
+        const { error: deleteMainError, count: deletedCount } = await supabase
+          .from(table)
+          .delete({ count: 'exact' })
+          .eq('id', id);
+
+        if (deleteMainError) throw deleteMainError;
+        if (!deletedCount) throw new Error('No rows were deleted.');
+      } else if (error) {
+        throw error;
+      }
 
       toast.success(language === 'ar' ? 'تم الحذف بنجاح' : 'Supprimé avec succès');
       fetchData();
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error(language === 'ar' ? 'فشل الحذف' : 'Échec de la suppression');
+      const errorMessage = error?.message || error?.details || error?.hint || '';
+      const baseMessage = language === 'ar' ? 'فشل الحذف' : 'Échec de la suppression';
+      toast.error(errorMessage ? `${baseMessage}: ${errorMessage}` : baseMessage);
     }
   };
 
