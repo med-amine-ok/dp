@@ -4,8 +4,9 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Play, Clock, CheckCircle, BookOpen, Sparkles, Heart } from 'lucide-react';
+import { Play, Clock, CheckCircle, BookOpen, Sparkles, Heart, Trophy, RotateCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,6 +21,26 @@ interface Video {
   thumbnail_url?: string | null;
   video_url: string;
   progress?: number;
+}
+
+interface VideoQuizOption {
+  id: string;
+  question_id: string;
+  option_fr: string;
+  option_ar: string;
+  is_correct: boolean;
+  sort_order: number;
+}
+
+interface VideoQuizQuestion {
+  id: string;
+  video_id: string;
+  question_fr: string;
+  question_ar: string;
+  explanation_fr: string | null;
+  explanation_ar: string | null;
+  sort_order: number;
+  options: VideoQuizOption[];
 }
 
 const DEFAULT_VIDEO_THUMBNAIL = '/thumbnail.png';
@@ -64,6 +85,11 @@ const EducationPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [selectedVideo, setSelectedVideo] = React.useState<Video | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = React.useState(false);
+  const [quizLoading, setQuizLoading] = React.useState(false);
+  const [quizSubmitting, setQuizSubmitting] = React.useState(false);
+  const [quizQuestions, setQuizQuestions] = React.useState<VideoQuizQuestion[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = React.useState<Record<string, string>>({});
+  const [quizResult, setQuizResult] = React.useState<{ score: number; total: number } | null>(null);
 
   React.useEffect(() => {
     const fetchVideos = async () => {
@@ -157,17 +183,155 @@ const EducationPage: React.FC = () => {
     setIsVideoDialogOpen(true);
   };
 
+  const fetchQuizForVideo = React.useCallback(async (videoId: string) => {
+    setQuizLoading(true);
+    try {
+      const { data: questionsData, error: questionsError } = await supabase
+        .from('video_quiz_questions')
+        .select('id, video_id, question_fr, question_ar, explanation_fr, explanation_ar, sort_order')
+        .eq('video_id', videoId)
+        .order('sort_order', { ascending: true });
+
+      if (questionsError) throw questionsError;
+
+      const safeQuestions = (questionsData || []) as Omit<VideoQuizQuestion, 'options'>[];
+      if (safeQuestions.length === 0) {
+        setQuizQuestions([]);
+        return;
+      }
+
+      const questionIds = safeQuestions.map((question) => question.id);
+      const { data: optionsData, error: optionsError } = await supabase
+        .from('video_quiz_options')
+        .select('id, question_id, option_fr, option_ar, is_correct, sort_order')
+        .in('question_id', questionIds)
+        .order('sort_order', { ascending: true });
+
+      if (optionsError) throw optionsError;
+
+      const optionsByQuestion = new Map<string, VideoQuizOption[]>();
+      (optionsData || []).forEach((option) => {
+        const typedOption = option as VideoQuizOption;
+        const existing = optionsByQuestion.get(typedOption.question_id) || [];
+        existing.push(typedOption);
+        optionsByQuestion.set(typedOption.question_id, existing);
+      });
+
+      const mergedQuiz = safeQuestions.map((question) => ({
+        ...question,
+        options: optionsByQuestion.get(question.id) || [],
+      }));
+
+      setQuizQuestions(mergedQuiz);
+    } catch (error) {
+      console.error('Error loading quiz:', error);
+      setQuizQuestions([]);
+    } finally {
+      setQuizLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!isVideoDialogOpen || !selectedVideo) {
+      return;
+    }
+
+    fetchQuizForVideo(selectedVideo.id);
+  }, [fetchQuizForVideo, isVideoDialogOpen, selectedVideo]);
+
   const handleVideoDialogChange = (open: boolean) => {
     setIsVideoDialogOpen(open);
     if (!open) {
       setSelectedVideo(null);
+      setSelectedAnswers({});
+      setQuizResult(null);
+      setQuizQuestions([]);
     }
+  };
+
+  const handleSelectAnswer = (questionId: string, optionId: string) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionId,
+    }));
+  };
+
+  const handleSubmitQuiz = async () => {
+    if (!user || !selectedVideo || quizQuestions.length === 0) return;
+
+    const allAnswered = quizQuestions.every((question) => !!selectedAnswers[question.id]);
+    if (!allAnswered) return;
+
+    const correctOptionByQuestion = new Map<string, string>();
+    quizQuestions.forEach((question) => {
+      const correctOption = question.options.find((option) => option.is_correct);
+      if (correctOption) {
+        correctOptionByQuestion.set(question.id, correctOption.id);
+      }
+    });
+
+    const score = quizQuestions.reduce((sum, question) => {
+      return sum + (selectedAnswers[question.id] === correctOptionByQuestion.get(question.id) ? 1 : 0);
+    }, 0);
+
+    const total = quizQuestions.length;
+
+    setQuizSubmitting(true);
+    try {
+      const answerPayload = quizQuestions.map((question) => {
+        const selectedOptionId = selectedAnswers[question.id];
+        const selectedOption = question.options.find((option) => option.id === selectedOptionId);
+        return {
+          question_id: question.id,
+          selected_option_id: selectedOptionId,
+          is_correct: selectedOption?.is_correct || false,
+        };
+      });
+
+      const { error: attemptError } = await supabase
+        .from('video_quiz_attempts')
+        .insert({
+          user_id: user.id,
+          video_id: selectedVideo.id,
+          score,
+          total_questions: total,
+          percentage: Math.round((score / total) * 100),
+          answers: answerPayload,
+        });
+
+      if (attemptError) throw attemptError;
+
+      setQuizResult({ score, total });
+    } catch (error) {
+      console.error('Error saving quiz attempt:', error);
+    } finally {
+      setQuizSubmitting(false);
+    }
+  };
+
+  const handleResetQuiz = () => {
+    setSelectedAnswers({});
+    setQuizResult(null);
   };
 
   const selectedVideoEmbedUrl = React.useMemo(
     () => getYouTubeEmbedUrl(selectedVideo?.video_url || ''),
     [selectedVideo]
   );
+
+  const isQuizComplete = quizQuestions.length > 0 && quizQuestions.every((question) => !!selectedAnswers[question.id]);
+  const answeredCount = quizQuestions.filter((question) => !!selectedAnswers[question.id]).length;
+  const quizProgressPercent = quizQuestions.length > 0 ? Math.round((answeredCount / quizQuestions.length) * 100) : 0;
+  const correctOptionByQuestion = React.useMemo(() => {
+    const map = new Map<string, string>();
+    quizQuestions.forEach((question) => {
+      const correctOption = question.options.find((option) => option.is_correct);
+      if (correctOption) {
+        map.set(question.id, correctOption.id);
+      }
+    });
+    return map;
+  }, [quizQuestions]);
 
   return (
     <DashboardLayout role="patient">
@@ -265,7 +429,7 @@ const EducationPage: React.FC = () => {
         </div>
 
         <Dialog open={isVideoDialogOpen} onOpenChange={handleVideoDialogChange}>
-          <DialogContent className="max-w-4xl p-4 sm:p-6">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>
                 {language === 'ar'
@@ -294,6 +458,172 @@ const EducationPage: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-xl border border-playful-yellow/30 bg-gradient-to-br from-playful-yellow/20 via-playful-orange/10 to-playful-pink/10 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-playful-orange" />
+                    {language === 'ar' ? 'اختبار ممتع بعد الفيديو' : 'Mini quiz amusant apres la video'}
+                  </h3>
+                  {quizQuestions.length > 0 && (
+                    <Badge className="bg-white/80 text-foreground border border-playful-orange/30">
+                      {language === 'ar'
+                        ? `${answeredCount} / ${quizQuestions.length} مجاب`
+                        : `${answeredCount} / ${quizQuestions.length} repondu`}
+                    </Badge>
+                  )}
+                </div>
+
+                {quizQuestions.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <Progress value={quizProgressPercent} className="h-2.5" />
+                    <div className="flex flex-wrap gap-1.5">
+                      {quizQuestions.map((question, index) => {
+                        const isAnswered = !!selectedAnswers[question.id];
+                        return (
+                          <span
+                            key={question.id}
+                            className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-semibold ${
+                              isAnswered
+                                ? 'bg-playful-green/25 text-playful-green'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {quizLoading ? (
+                <div className="text-sm text-muted-foreground">
+                  {language === 'ar' ? 'جار تحميل الاختبار...' : 'Chargement du quiz...'}
+                </div>
+              ) : quizQuestions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  {language === 'ar'
+                    ? 'لا يوجد اختبار لهذا الفيديو حتى الآن.'
+                    : 'Aucun quiz disponible pour cette video pour le moment.'}
+                </div>
+              ) : (
+                <>
+                  {quizQuestions.map((question, index) => (
+                    <div key={question.id} className="rounded-xl border border-primary/15 bg-card/80 p-4 space-y-3 shadow-sm">
+                      <p className="font-semibold text-foreground flex items-start gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold mt-0.5">
+                          {index + 1}
+                        </span>
+                        <span>{language === 'ar' ? question.question_ar : question.question_fr}</span>
+                      </p>
+
+                      <div className="space-y-2.5">
+                        {question.options.map((option) => {
+                          const isSelected = selectedAnswers[question.id] === option.id;
+                          const isSubmitted = !!quizResult;
+                          const isCorrect = correctOptionByQuestion.get(question.id) === option.id;
+                          const showCorrect = isSubmitted && isCorrect;
+                          const showWrong = isSubmitted && isSelected && !isCorrect;
+
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => handleSelectAnswer(question.id, option.id)}
+                              disabled={isSubmitted}
+                              className={`w-full rounded-lg border px-3 py-2.5 text-left text-sm transition-all disabled:cursor-not-allowed ${
+                                showCorrect
+                                  ? 'border-playful-green bg-playful-green/15 text-foreground'
+                                  : showWrong
+                                    ? 'border-red-400 bg-red-500/10 text-foreground'
+                                    : isSelected
+                                      ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                                      : 'border-border hover:bg-muted/60 text-muted-foreground'
+                              }`}
+                            >
+                              <span className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-2">
+                                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] font-bold text-foreground">
+                                    {String.fromCharCode(65 + option.sort_order - 1)}
+                                  </span>
+                                  <span>{language === 'ar' ? option.option_ar : option.option_fr}</span>
+                                </span>
+                                {showCorrect && <CheckCircle className="h-4 w-4 text-playful-green" />}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {quizResult && (language === 'ar' ? question.explanation_ar : question.explanation_fr) && (
+                        <div className="rounded-md bg-playful-yellow/15 border border-playful-yellow/30 px-3 py-2 text-xs text-foreground">
+                          <span className="font-semibold">
+                            {language === 'ar' ? 'معلومة:' : 'Info:'}
+                          </span>{' '}
+                          {language === 'ar' ? question.explanation_ar : question.explanation_fr}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {user ? (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      {quizResult ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Trophy className="h-4 w-4 text-playful-orange" />
+                            {language === 'ar'
+                              ? `نتيجتك: ${quizResult.score} / ${quizResult.total}`
+                              : `Ton score: ${quizResult.score} / ${quizResult.total}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'ar'
+                              ? `النسبة: ${Math.round((quizResult.score / quizResult.total) * 100)}%`
+                              : `Pourcentage: ${Math.round((quizResult.score / quizResult.total) * 100)}%`}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar'
+                            ? 'أجب على كل الأسئلة ثم احفظ النتيجة.'
+                            : 'Reponds a toutes les questions puis enregistre le resultat.'}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        {quizResult && (
+                          <Button type="button" variant="outline" onClick={handleResetQuiz}>
+                            <RotateCcw className="h-4 w-4" />
+                            {language === 'ar' ? 'إعادة المحاولة' : 'Recommencer'}
+                          </Button>
+                        )}
+
+                        {!quizResult && (
+                          <Button
+                            type="button"
+                            onClick={handleSubmitQuiz}
+                            disabled={!isQuizComplete || quizSubmitting}
+                          >
+                            {quizSubmitting
+                              ? language === 'ar' ? 'جار الحفظ...' : 'Enregistrement...'
+                              : language === 'ar' ? 'حفظ النتيجة' : 'Enregistrer le score'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar'
+                        ? 'سجل الدخول لحفظ نتيجتك في الاختبار.'
+                        : 'Connecte-toi pour enregistrer ton score de quiz.'}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>
