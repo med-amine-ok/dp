@@ -22,7 +22,7 @@ interface Video {
   progress?: number;
 }
 
-const DEFAULT_VIDEO_THUMBNAIL = '/default-video-thumbnail.svg';
+const DEFAULT_VIDEO_THUMBNAIL = '/thumbnail.png';
 
 const getYouTubeEmbedUrl = (url: string) => {
   if (!url) return '';
