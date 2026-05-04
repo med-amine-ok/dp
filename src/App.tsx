@@ -30,6 +30,7 @@ import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import StatisticsPage from "./pages/admin/StatisticsPage";
 import MonitoringPage from "./pages/admin/MonitoringPage";
+import LoginAnalyticsPage from "./pages/admin/LoginAnalyticsPage";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/analytics" element={<AnalyticsPage />} />
+              <Route path="/admin/logins" element={<LoginAnalyticsPage />} />
               <Route path="/admin/users" element={<UserManagementPage />} />
               <Route path="/admin/statistics" element={<StatisticsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />

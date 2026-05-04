@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardCard from '@/components/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Stethoscope, ThumbsUp, Activity, TrendingUp, Settings } from 'lucide-react';
+import { Users, Stethoscope, ThumbsUp, Activity, TrendingUp, Settings, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -237,48 +237,51 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Quick Links */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-4 gap-6">
           <Link to="/admin/users">
             <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
-              <CardContent className="p-6 flex items-center gap-4">
+              <CardContent className="p-6 flex items-center justify-center flex-col gap-3 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">{t('nav.userManagement')}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'إدارة المستخدمين' : 'Gérer les utilisateurs'}
-                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/admin/logins">
+            <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
+              <CardContent className="p-6 flex items-center justify-center flex-col gap-3 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 flex items-center justify-center">
+                  <LogIn className="h-6 w-6 text-indigo-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{language === 'ar' ? 'سجلات الدخول' : 'Connexions'}</h3>
                 </div>
               </CardContent>
             </Card>
           </Link>
           <Link to="/admin/statistics">
             <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
-              <CardContent className="p-6 flex items-center gap-4">
+              <CardContent className="p-6 flex items-center justify-center flex-col gap-3 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-success/15 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-success" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">{t('nav.statistics')}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'عرض الإحصائيات' : 'Voir les statistiques'}
-                  </p>
                 </div>
               </CardContent>
             </Card>
           </Link>
           <Link to="/admin/monitoring">
             <Card className="card-shadow hover:scale-[1.02] transition-all cursor-pointer rounded-3xl interactive-lift">
-              <CardContent className="p-6 flex items-center gap-4">
+              <CardContent className="p-6 flex items-center justify-center flex-col gap-3 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-warning/15 flex items-center justify-center">
                   <Settings className="h-6 w-6 text-warning" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">{t('nav.monitoring')}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'مراقبة النظام' : 'Surveillance système'}
-                  </p>
                 </div>
               </CardContent>
             </Card>

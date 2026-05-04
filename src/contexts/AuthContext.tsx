@@ -45,9 +45,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         fetchUserProfile(session.user.id, session.user.email);
+        
+        // Log the login event when explicitly signed in
+        if (event === 'SIGNED_IN') {
+          supabase.from('login_logs').insert({ user_id: session.user.id }).then(({ error }) => {
+            if (error) console.error('Failed to log login:', error);
+          });
+        }
       } else {
         setUser(null);
         setIsLoading(false);

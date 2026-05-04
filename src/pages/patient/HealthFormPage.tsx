@@ -11,10 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { fr, ar } from 'date-fns/locale';
-import { CalendarIcon, FileText, Send, PartyPopper, Mic } from 'lucide-react';
+import { CalendarIcon, FileText, Send, PartyPopper, Mic, Clock, Droplets, Activity } from 'lucide-react';
 import KidneyMascot from '@/components/KidneyMascot';
 import { supabase } from '@/lib/supabase';
 
@@ -32,6 +33,8 @@ const HealthFormPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('new');
 
   // Fetch Patient ID
   useEffect(() => {
@@ -46,6 +49,23 @@ const HealthFormPage: React.FC = () => {
     };
     fetchPatientId();
   }, [user]);
+
+  // Fetch History
+  useEffect(() => {
+    if (!patientId) return;
+    const fetchHistory = async () => {
+      const { data, error } = await supabase
+        .from('health_forms')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('session_date', { ascending: false });
+        
+      if (!error && data) {
+        setHistory(data);
+      }
+    };
+    fetchHistory();
+  }, [patientId, submitted]);
 
   const moodEmojis = [
     { value: 5, emoji: '😄', label: t('health.moodGreat') },
@@ -161,14 +181,25 @@ const HealthFormPage: React.FC = () => {
               {t('health.title')}
             </h1>
             <p className="text-muted-foreground">
-              {language === 'ar' ? 'أخبرنا كيف تشعر اليوم' : 'Dis-nous comment tu te sens aujourd\'hui'}
+              {language === 'ar' ? 'أخبرنا كيف تشعر اليوم أو تحقق من سجلك' : 'Dis-nous comment tu te sens aujourd\'hui ou consulte ton historique'}
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Mood Selection */}
-          <Card className="card-shadow">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-14 mb-6 rounded-xl bg-secondary/50">
+            <TabsTrigger value="new" className="text-base rounded-lg h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              ✨ {language === 'ar' ? 'نموذج جديد' : 'Nouveau Formulaire'}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-base rounded-lg h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              📚 {language === 'ar' ? 'سجلي  ' : 'Mon Historique'}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="new" className="space-y-6 mt-0">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Mood Selection */}
+              <Card className="card-shadow">
             <CardHeader>
               <CardTitle className="text-lg">{t('health.mood')} 😊</CardTitle>
             </CardHeader>
@@ -386,20 +417,137 @@ const HealthFormPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full h-14 text-lg font-semibold rounded-xl gap-2"
-            disabled={isSubmitting || !patientId}
-          >
-            {isSubmitting ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full h-14 text-lg font-semibold rounded-xl gap-2"
+                disabled={isSubmitting || !patientId}
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+                {t('health.submit')}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4 mt-0">
+            {history.length === 0 ? (
+              <div className="text-center py-12 bg-secondary/30 rounded-3xl border-2 border-dashed border-border">
+                <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <FileText className="h-10 w-10 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  {language === 'ar' ? 'لا يوجد سجل بعد' : 'Aucun historique pour le moment'}
+                </h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                  {language === 'ar' 
+                    ? 'لم تقم بملء أي نموذج صحي بعد. ابدأ الآن!' 
+                    : 'Tu n\'as pas encore rempli de formulaire de santé. Commence maintenant !'}
+                </p>
+                <Button onClick={() => setActiveTab('new')} className="rounded-full px-8">
+                  {language === 'ar' ? 'نموذج جديد' : 'Nouveau Formulaire'}
+                </Button>
+              </div>
             ) : (
-              <Send className="h-5 w-5" />
+              history.map((record) => {
+                const moodObj = moodEmojis.find((m) => m.value === record.mood) || moodEmojis[2];
+                const painObj = painEmojis.find((p) => p.value === record.pain_level) || painEmojis[0];
+                const displayDate = record.session_date ? format(parseISO(record.session_date), 'PPP', { locale: language === 'ar' ? ar : fr }) : '';
+                
+                return (
+                  <Card key={record.id} className="overflow-hidden border-2 transition-all hover:border-primary/50 hover:shadow-md">
+                    <div className="bg-primary/5 px-4 py-3 border-b flex justify-between items-center">
+                      <div className="flex items-center gap-2 font-medium text-primary">
+                        <CalendarIcon className="h-4 w-4" />
+                        {displayDate}
+                      </div>
+                      <div className="flex bg-white px-3 py-1 rounded-full text-xs font-bold shadow-sm items-center gap-1">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        {record.session_duration ? `${record.session_duration} ${language === 'ar' ? 'دقيقة' : 'min'}` : '-'}
+                      </div>
+                    </div>
+                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 bg-secondary/30 p-3 rounded-2xl">
+                          <div className="text-4xl bg-white w-14 h-14 rounded-full flex items-center justify-center shadow-sm">
+                            {moodObj.emoji}
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider mb-0.5">
+                              {t('health.mood')}
+                            </p>
+                            <p className="font-bold text-foreground">
+                              {moodObj.label}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-secondary/30 p-3 rounded-2xl">
+                          <div className="text-4xl bg-white w-14 h-14 rounded-full flex items-center justify-center shadow-sm">
+                            {painObj.emoji}
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider mb-0.5">
+                              {t('health.painLevel')}
+                            </p>
+                            <p className="font-bold text-foreground">
+                              {painObj.label} ({record.pain_level}/5)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="bg-secondary/30 p-4 rounded-2xl h-full">
+                          <h4 className="text-sm font-bold flex items-center gap-2 mb-3">
+                            <Activity className="h-4 w-4 text-playful-blue" />
+                            {language === 'ar' ? 'التفاصيل الطبية' : 'Détails Médicaux'}
+                          </h4>
+                          
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <Droplets className="h-3.5 w-3.5 text-playful-blue" />
+                                {t('health.infusedQuantity')}
+                              </span>
+                              <span className="font-semibold">{record.infused_quantity || '-'}</span>
+                            </div>
+                            <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <Droplets className="h-3.5 w-3.5 text-playful-pink" />
+                                {t('health.drainedQuantity')}
+                              </span>
+                              <span className="font-semibold">{record.drained_quantity || '-'}</span>
+                            </div>
+                          </div>
+
+                          {record.symptoms && record.symptoms.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs text-muted-foreground mb-1.5">{t('health.symptoms')}:</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {record.symptoms.map((sym: string) => {
+                                  const option = symptomOptions.find(o => o.id === sym);
+                                  return (
+                                    <span key={sym} className="bg-white border text-xs px-2 py-0.5 rounded-full">
+                                      {option ? (language === 'ar' ? option.labelAr : option.labelFr) : sym}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
-            {t('health.submit')}
-          </Button>
-        </form>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
